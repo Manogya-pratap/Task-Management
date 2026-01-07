@@ -1,0 +1,603 @@
+import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import api from '../services/api';
+
+// Initial state
+const initialState = {
+  // Global data
+  projects: [],
+  tasks: [],
+  teams: [],
+  users: [],
+  
+  // Loading states
+  loading: {
+    projects: false,
+    tasks: false,
+    teams: false,
+    users: false,
+    global: false
+  },
+  
+  // Error states
+  errors: {
+    projects: null,
+    tasks: null,
+    teams: null,
+    users: null,
+    global: null
+  },
+  
+  // UI state
+  ui: {
+    sidebarCollapsed: false,
+    theme: 'light',
+    notifications: [],
+    activeProject: null,
+    filters: {
+      tasks: {
+        status: 'all',
+        assignee: 'all',
+        project: 'all'
+      },
+      projects: {
+        status: 'all',
+        team: 'all'
+      }
+    }
+  },
+  
+  // Cache timestamps
+  lastFetch: {
+    projects: null,
+    tasks: null,
+    teams: null,
+    users: null
+  }
+};
+
+// Action types
+const APP_ACTIONS = {
+  // Data actions
+  SET_PROJECTS: 'SET_PROJECTS',
+  SET_TASKS: 'SET_TASKS',
+  SET_TEAMS: 'SET_TEAMS',
+  SET_USERS: 'SET_USERS',
+  
+  // Individual item actions
+  ADD_PROJECT: 'ADD_PROJECT',
+  UPDATE_PROJECT: 'UPDATE_PROJECT',
+  DELETE_PROJECT: 'DELETE_PROJECT',
+  
+  ADD_TASK: 'ADD_TASK',
+  UPDATE_TASK: 'UPDATE_TASK',
+  DELETE_TASK: 'DELETE_TASK',
+  
+  ADD_TEAM: 'ADD_TEAM',
+  UPDATE_TEAM: 'UPDATE_TEAM',
+  DELETE_TEAM: 'DELETE_TEAM',
+  
+  // Loading actions
+  SET_LOADING: 'SET_LOADING',
+  SET_ERROR: 'SET_ERROR',
+  CLEAR_ERROR: 'CLEAR_ERROR',
+  
+  // UI actions
+  TOGGLE_SIDEBAR: 'TOGGLE_SIDEBAR',
+  SET_THEME: 'SET_THEME',
+  ADD_NOTIFICATION: 'ADD_NOTIFICATION',
+  REMOVE_NOTIFICATION: 'REMOVE_NOTIFICATION',
+  SET_ACTIVE_PROJECT: 'SET_ACTIVE_PROJECT',
+  SET_FILTER: 'SET_FILTER',
+  
+  // Cache actions
+  SET_LAST_FETCH: 'SET_LAST_FETCH',
+  INVALIDATE_CACHE: 'INVALIDATE_CACHE'
+};
+
+// Reducer function
+const appReducer = (state, action) => {
+  switch (action.type) {
+    case APP_ACTIONS.SET_PROJECTS:
+      return {
+        ...state,
+        projects: action.payload,
+        loading: { ...state.loading, projects: false },
+        errors: { ...state.errors, projects: null },
+        lastFetch: { ...state.lastFetch, projects: new Date() }
+      };
+      
+    case APP_ACTIONS.SET_TASKS:
+      return {
+        ...state,
+        tasks: action.payload,
+        loading: { ...state.loading, tasks: false },
+        errors: { ...state.errors, tasks: null },
+        lastFetch: { ...state.lastFetch, tasks: new Date() }
+      };
+      
+    case APP_ACTIONS.SET_TEAMS:
+      return {
+        ...state,
+        teams: action.payload,
+        loading: { ...state.loading, teams: false },
+        errors: { ...state.errors, teams: null },
+        lastFetch: { ...state.lastFetch, teams: new Date() }
+      };
+      
+    case APP_ACTIONS.SET_USERS:
+      return {
+        ...state,
+        users: action.payload,
+        loading: { ...state.loading, users: false },
+        errors: { ...state.errors, users: null },
+        lastFetch: { ...state.lastFetch, users: new Date() }
+      };
+      
+    case APP_ACTIONS.ADD_PROJECT:
+      return {
+        ...state,
+        projects: [...state.projects, action.payload]
+      };
+      
+    case APP_ACTIONS.UPDATE_PROJECT:
+      return {
+        ...state,
+        projects: state.projects.map(project =>
+          project._id === action.payload._id ? action.payload : project
+        )
+      };
+      
+    case APP_ACTIONS.DELETE_PROJECT:
+      return {
+        ...state,
+        projects: state.projects.filter(project => project._id !== action.payload)
+      };
+      
+    case APP_ACTIONS.ADD_TASK:
+      return {
+        ...state,
+        tasks: [...state.tasks, action.payload]
+      };
+      
+    case APP_ACTIONS.UPDATE_TASK:
+      return {
+        ...state,
+        tasks: state.tasks.map(task =>
+          task._id === action.payload._id ? action.payload : task
+        )
+      };
+      
+    case APP_ACTIONS.DELETE_TASK:
+      return {
+        ...state,
+        tasks: state.tasks.filter(task => task._id !== action.payload)
+      };
+      
+    case APP_ACTIONS.ADD_TEAM:
+      return {
+        ...state,
+        teams: [...state.teams, action.payload]
+      };
+      
+    case APP_ACTIONS.UPDATE_TEAM:
+      return {
+        ...state,
+        teams: state.teams.map(team =>
+          team._id === action.payload._id ? action.payload : team
+        )
+      };
+      
+    case APP_ACTIONS.DELETE_TEAM:
+      return {
+        ...state,
+        teams: state.teams.filter(team => team._id !== action.payload)
+      };
+      
+    case APP_ACTIONS.SET_LOADING:
+      return {
+        ...state,
+        loading: { ...state.loading, [action.payload.key]: action.payload.value }
+      };
+      
+    case APP_ACTIONS.SET_ERROR:
+      return {
+        ...state,
+        errors: { ...state.errors, [action.payload.key]: action.payload.value },
+        loading: { ...state.loading, [action.payload.key]: false }
+      };
+      
+    case APP_ACTIONS.CLEAR_ERROR:
+      return {
+        ...state,
+        errors: { ...state.errors, [action.payload]: null }
+      };
+      
+    case APP_ACTIONS.TOGGLE_SIDEBAR:
+      return {
+        ...state,
+        ui: { ...state.ui, sidebarCollapsed: !state.ui.sidebarCollapsed }
+      };
+      
+    case APP_ACTIONS.SET_THEME:
+      return {
+        ...state,
+        ui: { ...state.ui, theme: action.payload }
+      };
+      
+    case APP_ACTIONS.ADD_NOTIFICATION:
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          notifications: [...state.ui.notifications, {
+            id: Date.now(),
+            ...action.payload
+          }]
+        }
+      };
+      
+    case APP_ACTIONS.REMOVE_NOTIFICATION:
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          notifications: state.ui.notifications.filter(n => n.id !== action.payload)
+        }
+      };
+      
+    case APP_ACTIONS.SET_ACTIVE_PROJECT:
+      return {
+        ...state,
+        ui: { ...state.ui, activeProject: action.payload }
+      };
+      
+    case APP_ACTIONS.SET_FILTER:
+      return {
+        ...state,
+        ui: {
+          ...state.ui,
+          filters: {
+            ...state.ui.filters,
+            [action.payload.type]: {
+              ...state.ui.filters[action.payload.type],
+              [action.payload.key]: action.payload.value
+            }
+          }
+        }
+      };
+      
+    case APP_ACTIONS.SET_LAST_FETCH:
+      return {
+        ...state,
+        lastFetch: { ...state.lastFetch, [action.payload.key]: action.payload.value }
+      };
+      
+    case APP_ACTIONS.INVALIDATE_CACHE:
+      return {
+        ...state,
+        lastFetch: { ...state.lastFetch, [action.payload]: null }
+      };
+      
+    default:
+      return state;
+  }
+};
+
+// Create context
+const AppContext = createContext();
+
+// Custom hook to use app context
+export const useApp = () => {
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+};
+
+// App provider component
+export const AppProvider = ({ children }) => {
+  const [state, dispatch] = useReducer(appReducer, initialState);
+  const { isAuthenticated, user } = useAuth();
+
+// Cache duration (5 minutes)
+const CACHE_DURATION = 5 * 60 * 1000;
+
+  // Check if data needs refresh
+  const needsRefresh = useCallback((key) => {
+    const lastFetch = state.lastFetch[key];
+    return !lastFetch || (Date.now() - lastFetch.getTime()) > CACHE_DURATION;
+  }, [state.lastFetch]);
+
+  // Fetch projects
+  const fetchProjects = useCallback(async (force = false) => {
+    if (!force && !needsRefresh('projects') && state.projects.length > 0) {
+      return;
+    }
+
+    try {
+      dispatch({ type: APP_ACTIONS.SET_LOADING, payload: { key: 'projects', value: true } });
+      const response = await api.get('/projects');
+      dispatch({ type: APP_ACTIONS.SET_PROJECTS, payload: response.data.data?.projects || response.data.projects || [] });
+    } catch (error) {
+      dispatch({ 
+        type: APP_ACTIONS.SET_ERROR, 
+        payload: { key: 'projects', value: error.response?.data?.message || 'Failed to fetch projects' }
+      });
+    }
+  }, [state.projects.length, needsRefresh]);
+
+  // Fetch tasks
+  const fetchTasks = useCallback(async (force = false, projectId = null) => {
+    if (!force && !needsRefresh('tasks') && state.tasks.length > 0 && !projectId) {
+      return;
+    }
+
+    try {
+      dispatch({ type: APP_ACTIONS.SET_LOADING, payload: { key: 'tasks', value: true } });
+      const params = projectId ? { projectId } : {};
+      const response = await api.get('/tasks', { params });
+      dispatch({ type: APP_ACTIONS.SET_TASKS, payload: response.data.data?.tasks || response.data.tasks || [] });
+    } catch (error) {
+      dispatch({ 
+        type: APP_ACTIONS.SET_ERROR, 
+        payload: { key: 'tasks', value: error.response?.data?.message || 'Failed to fetch tasks' }
+      });
+    }
+  }, [state.tasks.length, needsRefresh]);
+
+  // Fetch teams
+  const fetchTeams = useCallback(async (force = false) => {
+    if (!force && !needsRefresh('teams') && state.teams.length > 0) {
+      return;
+    }
+
+    try {
+      dispatch({ type: APP_ACTIONS.SET_LOADING, payload: { key: 'teams', value: true } });
+      const response = await api.get('/teams');
+      dispatch({ type: APP_ACTIONS.SET_TEAMS, payload: response.data.data?.teams || response.data.teams || [] });
+    } catch (error) {
+      dispatch({ 
+        type: APP_ACTIONS.SET_ERROR, 
+        payload: { key: 'teams', value: error.response?.data?.message || 'Failed to fetch teams' }
+      });
+    }
+  }, [state.teams.length, needsRefresh]);
+
+  // Fetch users (admin only)
+  const fetchUsers = useCallback(async (force = false) => {
+    if (!user || !['managing_director', 'it_admin'].includes(user.role)) {
+      return;
+    }
+
+    if (!force && !needsRefresh('users') && state.users.length > 0) {
+      return;
+    }
+
+    try {
+      dispatch({ type: APP_ACTIONS.SET_LOADING, payload: { key: 'users', value: true } });
+      const response = await api.get('/users');
+      dispatch({ type: APP_ACTIONS.SET_USERS, payload: response.data.data?.users || response.data.users || [] });
+    } catch (error) {
+      dispatch({ 
+        type: APP_ACTIONS.SET_ERROR, 
+        payload: { key: 'users', value: error.response?.data?.message || 'Failed to fetch users' }
+      });
+    }
+  }, [user, state.users.length, needsRefresh]);
+
+  // Fetch all data
+  const fetchAllData = useCallback(async (force = false) => {
+    if (!isAuthenticated) return;
+
+    await Promise.all([
+      fetchProjects(force),
+      fetchTasks(force),
+      fetchTeams(force),
+      fetchUsers(force)
+    ]);
+  }, [isAuthenticated, fetchProjects, fetchTasks, fetchTeams, fetchUsers]);
+
+  // Auto-fetch data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchAllData();
+    }
+  }, [isAuthenticated, fetchAllData]);
+
+  // CRUD operations
+  const createProject = async (projectData) => {
+    try {
+      const response = await api.post('/projects', projectData);
+      dispatch({ type: APP_ACTIONS.ADD_PROJECT, payload: response.data.data.project });
+      addNotification({ type: 'success', message: 'Project created successfully' });
+      return { success: true, data: response.data.data.project };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to create project' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const updateProject = async (projectId, projectData) => {
+    try {
+      const response = await api.put(`/projects/${projectId}`, projectData);
+      dispatch({ type: APP_ACTIONS.UPDATE_PROJECT, payload: response.data.data.project });
+      addNotification({ type: 'success', message: 'Project updated successfully' });
+      return { success: true, data: response.data.data.project };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to update project' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const deleteProject = async (projectId) => {
+    try {
+      await api.delete(`/projects/${projectId}`);
+      dispatch({ type: APP_ACTIONS.DELETE_PROJECT, payload: projectId });
+      addNotification({ type: 'success', message: 'Project deleted successfully' });
+      return { success: true };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to delete project' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const createTask = async (taskData) => {
+    try {
+      const response = await api.post('/tasks', taskData);
+      dispatch({ type: APP_ACTIONS.ADD_TASK, payload: response.data.data.task });
+      addNotification({ type: 'success', message: 'Task created successfully' });
+      return { success: true, data: response.data.data.task };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to create task' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const updateTask = async (taskId, taskData) => {
+    try {
+      const response = await api.put(`/tasks/${taskId}`, taskData);
+      dispatch({ type: APP_ACTIONS.UPDATE_TASK, payload: response.data.data.task });
+      addNotification({ type: 'success', message: 'Task updated successfully' });
+      return { success: true, data: response.data.data.task };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to update task' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const updateTaskStatus = async (taskId, status) => {
+    try {
+      const response = await api.patch(`/tasks/${taskId}/status`, { status });
+      dispatch({ type: APP_ACTIONS.UPDATE_TASK, payload: response.data.data.task });
+      return { success: true, data: response.data.data.task };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to update task status' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    try {
+      await api.delete(`/tasks/${taskId}`);
+      dispatch({ type: APP_ACTIONS.DELETE_TASK, payload: taskId });
+      addNotification({ type: 'success', message: 'Task deleted successfully' });
+      return { success: true };
+    } catch (error) {
+      addNotification({ type: 'error', message: error.response?.data?.message || 'Failed to delete task' });
+      return { success: false, error: error.response?.data?.message };
+    }
+  };
+
+  // UI actions
+  const toggleSidebar = () => {
+    dispatch({ type: APP_ACTIONS.TOGGLE_SIDEBAR });
+  };
+
+  const setTheme = (theme) => {
+    dispatch({ type: APP_ACTIONS.SET_THEME, payload: theme });
+    localStorage.setItem('theme', theme);
+  };
+
+  const addNotification = (notification) => {
+    dispatch({ type: APP_ACTIONS.ADD_NOTIFICATION, payload: notification });
+    
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => {
+      removeNotification(notification.id || Date.now());
+    }, 5000);
+  };
+
+  const removeNotification = (id) => {
+    dispatch({ type: APP_ACTIONS.REMOVE_NOTIFICATION, payload: id });
+  };
+
+  const setActiveProject = (projectId) => {
+    dispatch({ type: APP_ACTIONS.SET_ACTIVE_PROJECT, payload: projectId });
+  };
+
+  const setFilter = (type, key, value) => {
+    dispatch({ type: APP_ACTIONS.SET_FILTER, payload: { type, key, value } });
+  };
+
+  // Filtered data getters
+  const getFilteredTasks = () => {
+    let filtered = state.tasks;
+    const filters = state.ui.filters.tasks;
+
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(task => task.status === filters.status);
+    }
+
+    if (filters.assignee !== 'all') {
+      filtered = filtered.filter(task => task.assignedTo?._id === filters.assignee);
+    }
+
+    if (filters.project !== 'all') {
+      filtered = filtered.filter(task => task.projectId === filters.project);
+    }
+
+    return filtered;
+  };
+
+  const getFilteredProjects = () => {
+    let filtered = state.projects;
+    const filters = state.ui.filters.projects;
+
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(project => project.status === filters.status);
+    }
+
+    if (filters.team !== 'all') {
+      filtered = filtered.filter(project => project.teamId === filters.team);
+    }
+
+    return filtered;
+  };
+
+  // Context value
+  const value = {
+    // State
+    ...state,
+    
+    // Data fetching
+    fetchProjects,
+    fetchTasks,
+    fetchTeams,
+    fetchUsers,
+    fetchAllData,
+    
+    // CRUD operations
+    createProject,
+    updateProject,
+    deleteProject,
+    createTask,
+    updateTask,
+    updateTaskStatus,
+    deleteTask,
+    
+    // UI actions
+    toggleSidebar,
+    setTheme,
+    addNotification,
+    removeNotification,
+    setActiveProject,
+    setFilter,
+    
+    // Filtered data
+    getFilteredTasks,
+    getFilteredProjects,
+    
+    // Utility
+    needsRefresh
+  };
+
+  return (
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
+  );
+};
+
+export default AppContext;

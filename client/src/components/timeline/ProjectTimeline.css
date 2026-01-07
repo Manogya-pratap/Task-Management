@@ -1,0 +1,187 @@
+/* ProjectTimeline Component Styles */
+
+.timeline-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.timeline-filters {
+  background-color: #f8f9fa;
+}
+
+.timeline-filters .form-check {
+  margin-bottom: 0.25rem;
+}
+
+.timeline-filters .form-check-label {
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+}
+
+.status-indicator,
+.priority-indicator {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Timeline item content styling */
+.timeline-item-content {
+  padding: 4px 8px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.timeline-item-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.2;
+}
+
+.timeline-item-meta {
+  display: flex;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.timeline-item-meta .badge {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+}
+
+/* Override react-calendar-timeline styles for better integration */
+.react-calendar-timeline .rct-sidebar {
+  background-color: #ffffff;
+  border-right: 1px solid #dee2e6;
+}
+
+.react-calendar-timeline .rct-sidebar-row {
+  border-bottom: 1px solid #dee2e6;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+}
+
+.react-calendar-timeline .rct-sidebar-row:hover {
+  background-color: #e9ecef;
+}
+
+.react-calendar-timeline .rct-header-root {
+  background-color: #ffffff;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.react-calendar-timeline .rct-header {
+  border-bottom: 1px solid #dee2e6;
+}
+
+.react-calendar-timeline .rct-dateHeader {
+  color: #495057;
+  font-weight: 600;
+}
+
+.react-calendar-timeline .rct-canvas {
+  background-color: #ffffff;
+}
+
+.react-calendar-timeline .rct-horizontal-lines .rct-hl-even {
+  background-color: #f8f9fa;
+}
+
+.react-calendar-timeline .rct-horizontal-lines .rct-hl-odd {
+  background-color: #ffffff;
+}
+
+/* Maroon branding colors for Yantrik Automation */
+.timeline-filters .form-check-input:checked {
+  background-color: #800020;
+  border-color: #800020;
+}
+
+.timeline-filters .form-check-input:focus {
+  border-color: #800020;
+  box-shadow: 0 0 0 0.25rem rgba(128, 0, 32, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .timeline-container {
+    height: 400px;
+  }
+  
+  .react-calendar-timeline .rct-sidebar {
+    width: 150px !important;
+  }
+  
+  .timeline-item-title {
+    font-size: 0.7rem;
+  }
+  
+  .timeline-item-meta .badge {
+    font-size: 0.55rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .timeline-filters {
+    padding: 1rem !important;
+  }
+  
+  .timeline-filters .col-md-6 {
+    margin-bottom: 1rem;
+  }
+  
+  .timeline-container {
+    height: 350px;
+  }
+}
+
+/* Loading and error states */
+.timeline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  flex-direction: column;
+}
+
+.timeline-error {
+  padding: 2rem;
+  text-align: center;
+}
+
+/* Task interaction states */
+.timeline-item-content:hover {
+  opacity: 0.9;
+  cursor: pointer;
+}
+
+.timeline-item-content:active {
+  transform: scale(0.98);
+}
+
+/* Custom scrollbar for timeline */
+.react-calendar-timeline .rct-scroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.react-calendar-timeline .rct-scroll::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.react-calendar-timeline .rct-scroll::-webkit-scrollbar-thumb {
+  background: #800020;
+  border-radius: 4px;
+}
+
+.react-calendar-timeline .rct-scroll::-webkit-scrollbar-thumb:hover {
+  background: #600018;
+}
