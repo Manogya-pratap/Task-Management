@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import authService from '../services/authService';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import authService from "../services/authService";
 
 // Create context
 const AuthContext = createContext();
@@ -8,7 +8,7 @@ const AuthContext = createContext();
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -22,47 +22,47 @@ export const AuthProvider = ({ children }) => {
   // Initialize auth state on app load
   useEffect(() => {
     const initializeAuth = async () => {
-      console.log('🔄 Verifying token...');
-      
+      console.log("🔄 Verifying token...");
+
       try {
         const token = authService.getToken();
         const storedUser = authService.getCurrentUser();
-        
+
         if (token && storedUser) {
           // Verify token with server
           const result = await authService.verifyToken();
-          
+
           if (result.success) {
-            console.log('✅ Auth success:', result.user);
+            console.log("✅ Auth success:", result.user);
             setUser(result.user);
             setError(null);
           } else {
-            console.log('❌ Auth failed: Token invalid');
+            console.log("❌ Auth failed: Token invalid");
             setUser(null);
             setError(null);
             // Clear invalid token
             authService.logout();
           }
         } else {
-          console.log('❌ Auth failed: No token found');
+          console.log("❌ Auth failed: No token found");
           setUser(null);
           setError(null);
         }
       } catch (error) {
-        console.error('❌ Auth failed:', error.response?.data || error.message);
+        console.error("❌ Auth failed:", error.response?.data || error.message);
         setUser(null);
         setError(null);
         // Clear invalid token on error
         authService.logout();
       } finally {
-        console.log('🟢 Auth check finished');
+        console.log("🟢 Auth check finished");
         setIsLoading(false); // 🔥 THIS FIXES LOADING ISSUE
       }
     };
 
     // Emergency timeout fallback
     const emergencyTimeout = setTimeout(() => {
-      console.warn('⚠️ Auth timeout fallback - forcing loading to false');
+      console.warn("⚠️ Auth timeout fallback - forcing loading to false");
       setIsLoading(false);
     }, 8000);
 
@@ -77,10 +77,10 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await authService.login(credentials);
-      
+
       if (result.success) {
         setUser(result.user);
         return { success: true, user: result.user };
@@ -89,7 +89,7 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: result.message };
       }
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      const message = error.response?.data?.message || "Login failed";
       setError(message);
       return { success: false, message };
     } finally {
@@ -101,19 +101,23 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await authService.register(userData);
-      
+
       if (result.success) {
         setUser(result.user);
         return { success: true };
       } else {
         setError(result.message);
-        return { success: false, message: result.message, errors: result.errors };
+        return {
+          success: false,
+          message: result.message,
+          errors: result.errors,
+        };
       }
     } catch (error) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = error.response?.data?.message || "Registration failed";
       setError(message);
       return { success: false, message };
     } finally {
@@ -126,7 +130,7 @@ export const AuthProvider = ({ children }) => {
     try {
       await authService.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
       setUser(null);
       setError(null);
@@ -137,19 +141,23 @@ export const AuthProvider = ({ children }) => {
   const updatePassword = async (passwordData) => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const result = await authService.updatePassword(passwordData);
-      
+
       if (result.success) {
         setUser(result.user);
         return { success: true };
       } else {
         setError(result.message);
-        return { success: false, message: result.message, errors: result.errors };
+        return {
+          success: false,
+          message: result.message,
+          errors: result.errors,
+        };
       }
     } catch (error) {
-      const message = error.response?.data?.message || 'Password update failed';
+      const message = error.response?.data?.message || "Password update failed";
       setError(message);
       return { success: false, message };
     } finally {
@@ -179,8 +187,16 @@ export const AuthProvider = ({ children }) => {
 
   // Get user's full name
   const getUserFullName = () => {
-    if (!user) return '';
+    if (!user) return "";
     return `${user.firstName} ${user.lastName}`;
+  };
+
+  // Update user profile
+  const updateUser = (updatedUserData) => {
+    console.log("AuthContext: Updating user:", updatedUserData);
+    setUser(updatedUserData);
+    // Also update stored user data
+    authService.setCurrentUser(updatedUserData);
   };
 
   // Context value
@@ -191,26 +207,23 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated: !!user,
     isLoading,
     error,
-    
+
     // Actions
     login,
     register,
     logout,
     updatePassword,
+    updateUser,
     clearError,
-    
+
     // Utility functions
     hasRole,
     hasAnyRole,
     hasPermission,
-    getUserFullName
+    getUserFullName,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export default AuthContext;

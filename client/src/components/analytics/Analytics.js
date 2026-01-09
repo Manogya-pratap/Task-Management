@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Badge, Spinner } from 'react-bootstrap';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
+import React, { useState, useEffect, useCallback } from "react";
+import { Card, Row, Col, Badge, Spinner } from "react-bootstrap";
+import { useApp } from "../../contexts/AppContext";
+import api from "../../services/api";
 
 const Analytics = () => {
   const { projects, tasks, teams, users } = useApp();
@@ -9,41 +9,45 @@ const Analytics = () => {
   const [analytics, setAnalytics] = useState({
     overview: {},
     productivity: {},
-    trends: {}
+    trends: {},
   });
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, []);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await api.get('/analytics/dashboard');
+      const response = await api.get("/analytics/dashboard");
       setAnalytics(response.data.data);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
       // Fallback to calculated analytics from existing data
       calculateAnalytics();
     } finally {
       setLoading(false);
     }
-  };
+  }, [setLoading, setAnalytics, calculateAnalytics]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   const calculateAnalytics = () => {
     const totalProjects = projects.length;
-    const activeProjects = projects.filter(p => p.status === 'active').length;
-    const completedProjects = projects.filter(p => p.status === 'completed').length;
-    
+    const activeProjects = projects.filter((p) => p.status === "active").length;
+    const completedProjects = projects.filter(
+      (p) => p.status === "completed"
+    ).length;
+
     const totalTasks = tasks.length;
-    const completedTasks = tasks.filter(t => t.status === 'completed').length;
-    const inProgressTasks = tasks.filter(t => t.status === 'in_progress').length;
-    
+    const completedTasks = tasks.filter((t) => t.status === "completed").length;
+    const inProgressTasks = tasks.filter(
+      (t) => t.status === "in_progress"
+    ).length;
+
     const totalUsers = users.length;
-    const activeUsers = users.filter(u => u.isActive).length;
-    
+    const activeUsers = users.filter((u) => u.isActive).length;
+
     const totalTeams = teams.length;
-    const activeTeams = teams.filter(t => t.isActive).length;
+    const activeTeams = teams.filter((t) => t.isActive).length;
 
     setAnalytics({
       overview: {
@@ -57,18 +61,20 @@ const Analytics = () => {
         activeUsers,
         totalTeams,
         activeTeams,
-        completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+        completionRate:
+          totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0,
       },
       productivity: {
         tasksPerUser: totalUsers > 0 ? Math.round(totalTasks / totalUsers) : 0,
-        projectsPerTeam: totalTeams > 0 ? Math.round(totalProjects / totalTeams) : 0,
-        avgTaskCompletion: 75 // Mock data
+        projectsPerTeam:
+          totalTeams > 0 ? Math.round(totalProjects / totalTeams) : 0,
+        avgTaskCompletion: 75, // Mock data
       },
       trends: {
         weeklyGrowth: 12,
         monthlyGrowth: 8,
-        quarterlyGrowth: 25
-      }
+        quarterlyGrowth: 25,
+      },
     });
   };
 
@@ -98,7 +104,9 @@ const Analytics = () => {
               <div className="mb-3">
                 <i className="fas fa-project-diagram fa-2x text-primary"></i>
               </div>
-              <h3 className="text-primary">{analytics.overview.totalProjects}</h3>
+              <h3 className="text-primary">
+                {analytics.overview.totalProjects}
+              </h3>
               <p className="text-muted mb-2">Total Projects</p>
               <div>
                 <Badge bg="success" className="me-1">
@@ -111,7 +119,7 @@ const Analytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="h-100 border-0 shadow-sm">
             <Card.Body className="text-center">
@@ -131,7 +139,7 @@ const Analytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="h-100 border-0 shadow-sm">
             <Card.Body className="text-center">
@@ -148,20 +156,32 @@ const Analytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={3}>
           <Card className="h-100 border-0 shadow-sm">
             <Card.Body className="text-center">
               <div className="mb-3">
                 <i className="fas fa-percentage fa-2x text-warning"></i>
               </div>
-              <h3 className="text-warning">{analytics.overview.completionRate}%</h3>
+              <h3 className="text-warning">
+                {analytics.overview.completionRate}%
+              </h3>
               <p className="text-muted mb-2">Completion Rate</p>
               <div>
-                <Badge bg={analytics.overview.completionRate >= 80 ? 'success' : 
-                           analytics.overview.completionRate >= 60 ? 'warning' : 'danger'}>
-                  {analytics.overview.completionRate >= 80 ? 'Excellent' : 
-                   analytics.overview.completionRate >= 60 ? 'Good' : 'Needs Improvement'}
+                <Badge
+                  bg={
+                    analytics.overview.completionRate >= 80
+                      ? "success"
+                      : analytics.overview.completionRate >= 60
+                        ? "warning"
+                        : "danger"
+                  }
+                >
+                  {analytics.overview.completionRate >= 80
+                    ? "Excellent"
+                    : analytics.overview.completionRate >= 60
+                      ? "Good"
+                      : "Needs Improvement"}
                 </Badge>
               </div>
             </Card.Body>
@@ -201,7 +221,7 @@ const Analytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={4}>
           <Card className="h-100 border-0 shadow-sm">
             <Card.Header className="bg-success text-white">
@@ -226,13 +246,15 @@ const Analytics = () => {
               <div className="mb-3">
                 <div className="d-flex justify-content-between">
                   <span>Quarterly Growth</span>
-                  <Badge bg="warning">+{analytics.trends.quarterlyGrowth}%</Badge>
+                  <Badge bg="warning">
+                    +{analytics.trends.quarterlyGrowth}%
+                  </Badge>
                 </div>
               </div>
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={4}>
           <Card className="h-100 border-0 shadow-sm">
             <Card.Header className="bg-info text-white">
@@ -258,8 +280,14 @@ const Analytics = () => {
                 <div className="d-flex justify-content-between">
                   <span>Team Utilization</span>
                   <Badge bg="primary">
-                    {analytics.overview.totalTeams > 0 ? 
-                      Math.round((analytics.overview.activeTeams / analytics.overview.totalTeams) * 100) : 0}%
+                    {analytics.overview.totalTeams > 0
+                      ? Math.round(
+                          (analytics.overview.activeTeams /
+                            analytics.overview.totalTeams) *
+                            100
+                        )
+                      : 0}
+                    %
                   </Badge>
                 </div>
               </div>
@@ -286,12 +314,14 @@ const Analytics = () => {
                   </div>
                   <div>
                     <strong>Task Completed</strong>
-                    <p className="text-muted small mb-0">Website redesign task completed by John Doe</p>
+                    <p className="text-muted small mb-0">
+                      Website redesign task completed by John Doe
+                    </p>
                     <small className="text-muted">2 hours ago</small>
                   </div>
                 </div>
               </div>
-              
+
               <div className="activity-item mb-3">
                 <div className="d-flex">
                   <div className="activity-icon bg-primary text-white rounded-circle me-3">
@@ -299,12 +329,14 @@ const Analytics = () => {
                   </div>
                   <div>
                     <strong>New Project Created</strong>
-                    <p className="text-muted small mb-0">Mobile App Development project started</p>
+                    <p className="text-muted small mb-0">
+                      Mobile App Development project started
+                    </p>
                     <small className="text-muted">5 hours ago</small>
                   </div>
                 </div>
               </div>
-              
+
               <div className="activity-item">
                 <div className="d-flex">
                   <div className="activity-icon bg-info text-white rounded-circle me-3">
@@ -312,7 +344,9 @@ const Analytics = () => {
                   </div>
                   <div>
                     <strong>New Team Member</strong>
-                    <p className="text-muted small mb-0">Jane Smith joined the Development Team</p>
+                    <p className="text-muted small mb-0">
+                      Jane Smith joined the Development Team
+                    </p>
                     <small className="text-muted">1 day ago</small>
                   </div>
                 </div>
@@ -320,7 +354,7 @@ const Analytics = () => {
             </Card.Body>
           </Card>
         </Col>
-        
+
         <Col md={6}>
           <Card className="border-0 shadow-sm">
             <Card.Header>
@@ -336,18 +370,19 @@ const Analytics = () => {
                   <strong>3 tasks</strong> are approaching their deadlines
                 </div>
               </div>
-              
+
               <div className="alert alert-info d-flex align-items-center mb-3">
                 <i className="fas fa-project-diagram me-2"></i>
                 <div>
                   <strong>2 projects</strong> need status updates
                 </div>
               </div>
-              
+
               <div className="alert alert-success d-flex align-items-center">
                 <i className="fas fa-trophy me-2"></i>
                 <div>
-                  <strong>Development Team</strong> achieved 95% completion rate this week!
+                  <strong>Development Team</strong> achieved 95% completion rate
+                  this week!
                 </div>
               </div>
             </Card.Body>

@@ -1,24 +1,25 @@
-import React from 'react';
-import { useDrop } from 'react-dnd';
-import TaskCard from './TaskCard';
-import { StatusIndicator, COLORS } from './shared/StatusIndicator';
+import React from "react";
+import { useDrop } from "react-dnd";
+import TaskCard from "./TaskCard";
+// eslint-disable-next-line no-unused-vars
+import { StatusIndicator, COLORS } from "./shared/StatusIndicator";
 
-const TaskColumn = ({ 
-  status, 
-  title, 
+const TaskColumn = ({
+  status,
+  title,
   color,
-  icon = 'fas fa-tasks',
-  tasks, 
-  onTaskMove, 
-  onDragStart, 
+  icon = "fas fa-tasks",
+  tasks,
+  onTaskMove,
+  onDragStart,
   onDragEnd,
   draggedTask,
   canAcceptDrop = true,
-  onTaskClick = null
+  onTaskClick = null,
 }) => {
   // Set up drop zone for drag and drop
   const [{ isOver, canDrop }, drop] = useDrop({
-    accept: 'task',
+    accept: "task",
     drop: (item) => {
       if (item.status !== status) {
         onTaskMove(item.id, status);
@@ -27,20 +28,20 @@ const TaskColumn = ({
     canDrop: (item) => canAcceptDrop && item.status !== status,
     collect: (monitor) => ({
       isOver: monitor.isOver(),
-      canDrop: monitor.canDrop()
-    })
+      canDrop: monitor.canDrop(),
+    }),
   });
 
   // Determine column styling based on drop state
   const getColumnClasses = () => {
-    let classes = 'task-column h-100';
-    
+    let classes = "task-column h-100";
+
     if (isOver && canDrop) {
-      classes += ' drop-zone-active';
+      classes += " drop-zone-active";
     } else if (canDrop && draggedTask) {
-      classes += ' drop-zone-available';
+      classes += " drop-zone-available";
     }
-    
+
     return classes;
   };
 
@@ -50,20 +51,21 @@ const TaskColumn = ({
   };
 
   return (
-    <div 
-      ref={drop} 
+    <div
+      ref={drop}
       className={getColumnClasses()}
-      style={{ minHeight: '500px' }}
+      style={{ minHeight: "400px" }}
     >
       <div className="card h-100 border-0 shadow-sm">
         {/* Column Header */}
-        <div 
-          className="card-header border-0 text-white d-flex justify-content-between align-items-center"
+        <div
+          className="card-header border-0 text-white d-flex justify-content-between align-items-center py-2 px-3"
           style={{ backgroundColor: getHeaderColor() }}
         >
           <div className="d-flex align-items-center">
             <i className={`${icon} me-2`}></i>
-            <h6 className="mb-0 fw-bold">{title}</h6>
+            <h6 className="mb-0 fw-bold d-none d-md-block">{title}</h6>
+            <h6 className="mb-0 fw-bold d-md-none">{title.substring(0, 8)}</h6>
           </div>
           <span className="badge bg-light text-dark rounded-pill">
             {tasks.length}
@@ -71,7 +73,10 @@ const TaskColumn = ({
         </div>
 
         {/* Column Body */}
-        <div className="card-body p-2" style={{ maxHeight: '450px', overflowY: 'auto' }}>
+        <div
+          className="card-body p-2 p-md-3"
+          style={{ maxHeight: "500px", overflowY: "auto", minHeight: "300px" }}
+        >
           {tasks.length === 0 ? (
             <div className="text-center py-4">
               <div className="text-muted">
@@ -88,7 +93,7 @@ const TaskColumn = ({
               )}
             </div>
           ) : (
-            <div className="task-list">
+            <div className="task-list d-grid gap-2">
               {tasks.map((task, index) => (
                 <TaskCard
                   key={task._id}
@@ -97,7 +102,7 @@ const TaskColumn = ({
                   onDragEnd={onDragEnd}
                   isDragging={draggedTask && draggedTask._id === task._id}
                   onClick={onTaskClick ? () => onTaskClick(task) : null}
-                  className="mb-2"
+                  className="mb-2 task-card-item"
                 />
               ))}
             </div>

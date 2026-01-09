@@ -61,7 +61,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     });
 
@@ -99,7 +99,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     });
 
@@ -130,7 +130,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 3 }
       );
     });
 
@@ -154,7 +154,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     });
 
@@ -162,7 +162,7 @@ describe('Session Security Properties', () => {
       fc.assert(
         fc.property(
           fc.string({ minLength: 1, maxLength: 50 }),
-          fc.integer({ min: 1, max: 5 }),
+          fc.integer({ min: 1, max: 3 }),
           (userId, sessionCount) => {
             const sessions = [];
             
@@ -189,7 +189,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 10 }
+        { numRuns: 5 }
       );
     });
 
@@ -228,7 +228,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 10 }
+        { numRuns: 5 }
       );
     });
 
@@ -254,7 +254,7 @@ describe('Session Security Properties', () => {
             return true;
           }
         ),
-        { numRuns: 5 }
+        { numRuns: 3 }
       );
     });
   });

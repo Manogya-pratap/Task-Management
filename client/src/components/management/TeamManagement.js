@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Modal, Form, Row, Col, Badge, Alert, Spinner } from 'react-bootstrap';
-import { useApp } from '../../contexts/AppContext';
-import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  Button,
+  Table,
+  Modal,
+  Form,
+  Row,
+  Col,
+  Badge,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
+import { useApp } from "../../contexts/AppContext";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 
 const TeamManagement = () => {
   const { teams, users, fetchTeams, fetchUsers } = useApp();
@@ -12,22 +23,22 @@ const TeamManagement = () => {
   const [editingTeam, setEditingTeam] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   const [formData, setFormData] = useState({
-    name: '',
-    department: '',
-    description: '',
-    teamLead: '',
-    members: []
+    name: "",
+    department: "",
+    description: "",
+    teamLeadId: "", // Changed from teamLead to match backend validation
+    members: [],
   });
 
   const departments = [
-    'IT Development',
-    'Human Resources', 
-    'Finance',
-    'Marketing',
-    'Operations',
-    'Sales'
+    "IT Development",
+    "Human Resources",
+    "Finance",
+    "Marketing",
+    "Operations",
+    "Sales",
   ];
 
   useEffect(() => {
@@ -39,20 +50,20 @@ const TeamManagement = () => {
     if (team) {
       setEditingTeam(team);
       setFormData({
-        name: team.name || '',
-        department: team.department || '',
-        description: team.description || '',
-        teamLead: team.teamLead?._id || '',
-        members: team.members?.map(m => m._id) || []
+        name: team.name || "",
+        department: team.department || "",
+        description: team.description || "",
+        teamLeadId: team.teamLead?._id || "",
+        members: team.members?.map((m) => m._id) || [],
       });
     } else {
       setEditingTeam(null);
       setFormData({
-        name: '',
-        department: '',
-        description: '',
-        teamLead: '',
-        members: []
+        name: "",
+        department: "",
+        description: "",
+        teamLeadId: "",
+        members: [],
       });
     }
     setShowModal(true);
@@ -69,19 +80,19 @@ const TeamManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
   const handleMemberChange = (e) => {
     const { value, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      members: checked 
+      members: checked
         ? [...prev.members, value]
-        : prev.members.filter(id => id !== value)
+        : prev.members.filter((id) => id !== value),
     }));
   };
 
@@ -92,42 +103,43 @@ const TeamManagement = () => {
 
     try {
       if (editingTeam) {
-        await api.put(`/teams/${editingTeam._id}`, formData);
-        setSuccess('Team updated successfully!');
+        await api.patch(`/teams/${editingTeam._id}`, formData);
+        setSuccess("Team updated successfully!");
       } else {
-        await api.post('/teams', formData);
-        setSuccess('Team created successfully!');
+        await api.post("/teams", formData);
+        setSuccess("Team created successfully!");
       }
-      
+
       await fetchTeams();
       setTimeout(() => {
         handleCloseModal();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save team');
+      setError(err.response?.data?.message || "Failed to save team");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (teamId) => {
-    if (!window.confirm('Are you sure you want to delete this team?')) return;
-    
+    if (!window.confirm("Are you sure you want to delete this team?")) return;
+
     setLoading(true);
     try {
       await api.delete(`/teams/${teamId}`);
       await fetchTeams();
-      setSuccess('Team deleted successfully!');
+      setSuccess("Team deleted successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete team');
+      setError(err.response?.data?.message || "Failed to delete team");
       setTimeout(() => setError(null), 3000);
     } finally {
       setLoading(false);
     }
   };
 
-  const canManageTeams = user?.role === 'managing_director' || user?.role === 'it_admin';
+  const canManageTeams =
+    user?.role === "managing_director" || user?.role === "it_admin";
 
   return (
     <div className="team-management">
@@ -137,8 +149,8 @@ const TeamManagement = () => {
           Team Management
         </h2>
         {canManageTeams && (
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => handleShowModal()}
             disabled={loading}
           >
@@ -177,12 +189,14 @@ const TeamManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {teams.map(team => (
+                {teams.map((team) => (
                   <tr key={team._id}>
                     <td>
                       <strong>{team.name}</strong>
                       {team.description && (
-                        <div className="text-muted small">{team.description}</div>
+                        <div className="text-muted small">
+                          {team.description}
+                        </div>
                       )}
                     </td>
                     <td>
@@ -204,8 +218,8 @@ const TeamManagement = () => {
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg={team.isActive ? 'success' : 'danger'}>
-                        {team.isActive ? 'Active' : 'Inactive'}
+                      <Badge bg={team.isActive ? "success" : "danger"}>
+                        {team.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </td>
                     {canManageTeams && (
@@ -231,7 +245,10 @@ const TeamManagement = () => {
                 ))}
                 {teams.length === 0 && (
                   <tr>
-                    <td colSpan={canManageTeams ? 6 : 5} className="text-center py-4">
+                    <td
+                      colSpan={canManageTeams ? 6 : 5}
+                      className="text-center py-4"
+                    >
                       <i className="fas fa-users fa-3x text-muted mb-3"></i>
                       <p className="text-muted">No teams found</p>
                     </td>
@@ -247,14 +264,14 @@ const TeamManagement = () => {
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingTeam ? 'Edit Team' : 'Add New Team'}
+            {editingTeam ? "Edit Team" : "Add New Team"}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
-            
+
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -279,8 +296,10 @@ const TeamManagement = () => {
                     required
                   >
                     <option value="">Select Department</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
+                    {departments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
@@ -302,23 +321,31 @@ const TeamManagement = () => {
             <Form.Group className="mb-3">
               <Form.Label>Team Lead</Form.Label>
               <Form.Select
-                name="teamLead"
-                value={formData.teamLead}
+                name="teamLeadId"
+                value={formData.teamLeadId}
                 onChange={handleInputChange}
               >
                 <option value="">Select Team Lead</option>
-                {users.filter(u => u.role === 'team_lead' || u.role === 'managing_director').map(user => (
-                  <option key={user._id} value={user._id}>
-                    {user.firstName} {user.lastName} ({user.role})
-                  </option>
-                ))}
+                {users
+                  .filter(
+                    (u) =>
+                      u.role === "team_lead" || u.role === "managing_director"
+                  )
+                  .map((user) => (
+                    <option key={user._id} value={user._id}>
+                      {user.firstName} {user.lastName} ({user.role})
+                    </option>
+                  ))}
               </Form.Select>
             </Form.Group>
 
             <Form.Group className="mb-3">
               <Form.Label>Team Members</Form.Label>
-              <div className="border rounded p-3" style={{ maxHeight: '200px', overflowY: 'auto' }}>
-                {users.map(user => (
+              <div
+                className="border rounded p-3"
+                style={{ maxHeight: "200px", overflowY: "auto" }}
+              >
+                {users.map((user) => (
                   <Form.Check
                     key={user._id}
                     type="checkbox"
@@ -336,18 +363,16 @@ const TeamManagement = () => {
             <Button variant="secondary" onClick={handleCloseModal}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              type="submit" 
-              disabled={loading}
-            >
+            <Button variant="primary" type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  {editingTeam ? 'Updating...' : 'Creating...'}
+                  {editingTeam ? "Updating..." : "Creating..."}
                 </>
+              ) : editingTeam ? (
+                "Update Team"
               ) : (
-                editingTeam ? 'Update Team' : 'Create Team'
+                "Create Team"
               )}
             </Button>
           </Modal.Footer>

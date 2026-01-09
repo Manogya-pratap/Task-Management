@@ -1,7 +1,8 @@
 /* TaskCalendar Component Styles */
 
 .task-calendar {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    sans-serif;
 }
 
 .deadline-notifications {
@@ -23,6 +24,9 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  min-height: 400px;
+  max-height: 500px;
+  overflow: hidden;
 }
 
 .calendar-header {
@@ -30,15 +34,20 @@
   grid-template-columns: repeat(7, 1fr);
   background-color: #f8f9fa;
   border-bottom: 2px solid #dee2e6;
+  flex-shrink: 0;
 }
 
 .calendar-day-header {
-  padding: 12px 8px;
+  padding: 8px 4px;
   text-align: center;
   font-weight: 600;
   color: #495057;
   border-right: 1px solid #dee2e6;
   font-size: 0.875rem;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .calendar-day-header:last-child {
@@ -50,7 +59,9 @@
   grid-template-columns: repeat(7, 1fr);
   grid-template-rows: repeat(6, 1fr);
   flex: 1;
-  min-height: 400px;
+  min-height: 350px;
+  max-height: 450px;
+  overflow: auto;
 }
 
 /* Calendar Day Cells */
@@ -75,9 +86,23 @@
   border-color: #007bff;
 }
 
-.calendar-day.clickable-empty:hover {
+.calendar-day.clickable-empty {
   background: linear-gradient(135deg, #f0fff0 0%, #e6ffe6 100%);
   border-color: #28a745;
+  cursor: pointer;
+  position: relative;
+}
+
+.calendar-day.clickable-empty:hover {
+  background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+  border-color: #28a745;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(40, 167, 69, 0.2);
+}
+
+.calendar-day.clickable-empty:active {
+  transform: translateY(0px);
+  box-shadow: 0 1px 4px rgba(40, 167, 69, 0.3);
 }
 
 .calendar-day.has-tasks {
@@ -161,13 +186,18 @@
 }
 
 .calendar-task::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left 0.5s ease;
 }
 
@@ -212,25 +242,25 @@
     min-height: 60px;
     padding: 4px;
   }
-  
+
   .calendar-day-number {
     font-size: 0.75rem;
   }
-  
+
   .calendar-task {
     font-size: 0.65rem;
     padding: 1px 4px;
     min-height: 14px;
   }
-  
+
   .calendar-task-title {
     max-width: 60px;
   }
-  
+
   .calendar-task-time {
     display: none;
   }
-  
+
   .calendar-day-header {
     padding: 8px 4px;
     font-size: 0.75rem;
@@ -241,22 +271,22 @@
   .calendar-body {
     min-height: 300px;
   }
-  
+
   .calendar-day {
     min-height: 50px;
     padding: 2px;
   }
-  
+
   .calendar-task {
     font-size: 0.6rem;
     padding: 1px 2px;
     min-height: 12px;
   }
-  
+
   .calendar-day-tasks {
     gap: 1px;
   }
-  
+
   .deadline-notifications {
     padding: 1rem !important;
   }
@@ -311,9 +341,15 @@
 
 /* Animation for task hover effects */
 @keyframes taskPulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .calendar-task:active {
@@ -336,11 +372,11 @@
   .calendar-day {
     border-width: 2px;
   }
-  
+
   .calendar-task {
     border: 1px solid #000;
   }
-  
+
   .calendar-day.today {
     border-width: 3px;
   }

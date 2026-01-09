@@ -1,35 +1,39 @@
-const mongoose = require('mongoose');
-const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '../.env') });
+const mongoose = require("mongoose");
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "../.env") });
 
-const app = require('./app-working');
+const app = require("./app-working");
 
 // Connect to database with working configuration
 const connectDB = async () => {
   try {
-    const connectionString = 'mongodb+srv://mpsingh1932000_db_user:SjdO4YMSoN3s0Nr2@task-management.4t1yxy0.mongodb.net/?appName=task-management';
-    console.log('Attempting MongoDB connection...');
-    
+    const connectionString =
+      process.env.MONGODB_URI ||
+      "mongodb+srv://mpsingh1932000_db_user:SjdO4YMSoN3s0Nr2@task-management.4t1yxy0.mongodb.net/?appName=task-management";
+    console.log("Attempting MongoDB connection...");
+
     const conn = await mongoose.connect(connectionString, {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('❌ MongoDB connection failed:', error.message);
-    console.log('Server will continue without database...');
+    console.error("❌ MongoDB connection failed:", error.message);
+    console.log("Server will continue without database...");
   }
 };
 
 const PORT = process.env.PORT || 5000;
 
 // Only start server if not in test environment
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== "test") {
   app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
-    console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
-    console.log(`🔗 CORS configured for: ${process.env.CLIENT_URL || 'http://localhost:3000'}`);
-    
+    console.log(`🌍 Environment: ${process.env.NODE_ENV || "development"}`);
+    console.log(
+      `🔗 CORS configured for: ${process.env.CLIENT_URL || "http://localhost:3000"}`
+    );
+
     // Connect to database after server starts
     setTimeout(connectDB, 1000);
   });

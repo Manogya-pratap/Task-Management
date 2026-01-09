@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 const LoginForm = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    password: ''
+    username: "",
+    password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -25,39 +25,39 @@ const LoginForm = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      const from = location.state?.from?.pathname || '/dashboard';
+      const from = location.state?.from?.pathname || "/dashboard";
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
-    
+
     // Clear validation errors when user starts typing
     if (validationErrors[name]) {
-      setValidationErrors(prev => ({
+      setValidationErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Client-side validation
     const errors = {};
     if (!formData.username.trim()) {
-      errors.username = 'Username or email is required';
+      errors.username = "Username or email is required";
     }
     if (!formData.password) {
-      errors.password = 'Password is required';
+      errors.password = "Password is required";
     }
-    
+
     if (Object.keys(errors).length > 0) {
       setValidationErrors(errors);
       return;
@@ -69,16 +69,18 @@ const LoginForm = () => {
     try {
       const result = await login({
         username: formData.username.trim(),
-        password: formData.password
+        password: formData.password,
       });
 
       if (result.success) {
         // Determine redirect path based on user role (Requirements 1.3, 1.4, 1.5)
-        const from = location.state?.from?.pathname || getDefaultRedirectPath(result.user?.role);
+        const from =
+          location.state?.from?.pathname ||
+          getDefaultRedirectPath(result.user?.role);
         navigate(from, { replace: true });
       }
     } catch (err) {
-      console.error('Login error:', err);
+      console.error("Login error:", err);
     } finally {
       setIsSubmitting(false);
     }
@@ -87,42 +89,50 @@ const LoginForm = () => {
   const getDefaultRedirectPath = (userRole) => {
     // Role-based redirection based on requirements 1.3, 1.4, 1.5
     switch (userRole) {
-      case 'managing_director':
-      case 'it_admin':
-        return '/dashboard'; // Full system access dashboard
-      case 'team_lead':
-        return '/dashboard'; // Team management dashboard
-      case 'employee':
-        return '/dashboard'; // Personal tasks dashboard
+      case "managing_director":
+      case "it_admin":
+        return "/dashboard"; // Full system access dashboard
+      case "team_lead":
+        return "/dashboard"; // Team management dashboard
+      case "employee":
+        return "/dashboard"; // Personal tasks dashboard
       default:
-        return '/dashboard';
+        return "/dashboard";
     }
   };
 
-  const isFormValid = formData.username.trim() && formData.password;
+  const isFormValid = formData.username && formData.password; // eslint-disable-line no-unused-vars
 
   return (
     <div className="container-fluid vh-100 d-flex align-items-center justify-content-center bg-light">
       <div className="row w-100">
         <div className="col-12 col-md-6 col-lg-4 mx-auto">
           <div className="card shadow-lg border-0">
-            <div className="card-header text-white text-center py-4" style={{ backgroundColor: 'var(--primary-maroon)' }}>
+            <div
+              className="card-header text-white text-center py-4"
+              style={{ backgroundColor: "var(--primary-maroon)" }}
+            >
               <h3 className="mb-0">
                 <i className="fas fa-user-circle me-2"></i>
                 Daily Activity Tracker
               </h3>
-              <p className="mb-0 mt-2 opacity-75">Yantrik Automation Pvt. Ltd.</p>
+              <p className="mb-0 mt-2 opacity-75">
+                Yantrik Automation Pvt. Ltd.
+              </p>
             </div>
-            
+
             <div className="card-body p-4">
               <form onSubmit={handleSubmit} noValidate>
                 {error && (
-                  <div className="alert alert-danger alert-dismissible fade show" role="alert">
+                  <div
+                    className="alert alert-danger alert-dismissible fade show"
+                    role="alert"
+                  >
                     <i className="fas fa-exclamation-triangle me-2"></i>
                     {error}
-                    <button 
-                      type="button" 
-                      className="btn-close" 
+                    <button
+                      type="button"
+                      className="btn-close"
                       onClick={clearError}
                       aria-label="Close"
                     ></button>
@@ -131,13 +141,16 @@ const LoginForm = () => {
 
                 <div className="mb-3">
                   <label htmlFor="username" className="form-label fw-semibold">
-                    <i className="fas fa-user me-2" style={{ color: 'var(--primary-maroon)' }}></i>
+                    <i
+                      className="fas fa-user me-2"
+                      style={{ color: "var(--primary-maroon)" }}
+                    ></i>
                     Username or Email
                   </label>
                   <input
                     type="text"
                     className={`form-control form-control-lg ${
-                      error || validationErrors.username ? 'is-invalid' : ''
+                      error || validationErrors.username ? "is-invalid" : ""
                     }`}
                     id="username"
                     name="username"
@@ -157,14 +170,17 @@ const LoginForm = () => {
 
                 <div className="mb-4">
                   <label htmlFor="password" className="form-label fw-semibold">
-                    <i className="fas fa-lock me-2" style={{ color: 'var(--primary-maroon)' }}></i>
+                    <i
+                      className="fas fa-lock me-2"
+                      style={{ color: "var(--primary-maroon)" }}
+                    ></i>
                     Password
                   </label>
                   <div className="input-group">
                     <input
-                      type={showPassword ? 'text' : 'password'}
+                      type={showPassword ? "text" : "password"}
                       className={`form-control form-control-lg ${
-                        error || validationErrors.password ? 'is-invalid' : ''
+                        error || validationErrors.password ? "is-invalid" : ""
                       }`}
                       id="password"
                       name="password"
@@ -180,9 +196,13 @@ const LoginForm = () => {
                       className="btn btn-outline-secondary"
                       onClick={() => setShowPassword(!showPassword)}
                       disabled={isSubmitting}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={
+                        showPassword ? "Hide password" : "Show password"
+                      }
                     >
-                      <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                      <i
+                        className={`fas ${showPassword ? "fa-eye-slash" : "fa-eye"}`}
+                      ></i>
                     </button>
                   </div>
                   {validationErrors.password && (
@@ -200,7 +220,11 @@ const LoginForm = () => {
                   >
                     {isSubmitting ? (
                       <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        <span
+                          className="spinner-border spinner-border-sm me-2"
+                          role="status"
+                          aria-hidden="true"
+                        ></span>
                         Signing In...
                       </>
                     ) : (
@@ -239,14 +263,24 @@ const LoginForm = () => {
                 <strong>Access Levels by Role:</strong>
               </p>
               <ul className="small mb-2">
-                <li><strong>MD/IT Admin:</strong> Full system access - all features and data</li>
-                <li><strong>Team Lead:</strong> Team management, project creation, task assignment</li>
-                <li><strong>Employee:</strong> Personal tasks and assigned project access only</li>
+                <li>
+                  <strong>MD/IT Admin:</strong> Full system access - all
+                  features and data
+                </li>
+                <li>
+                  <strong>Team Lead:</strong> Team management, project creation,
+                  task assignment
+                </li>
+                <li>
+                  <strong>Employee:</strong> Personal tasks and assigned project
+                  access only
+                </li>
               </ul>
               <div className="alert alert-warning alert-sm py-2 mb-0">
                 <small>
                   <i className="fas fa-shield-alt me-1"></i>
-                  <strong>Security:</strong> Users can only access features appropriate to their role
+                  <strong>Security:</strong> Users can only access features
+                  appropriate to their role
                 </small>
               </div>
             </div>

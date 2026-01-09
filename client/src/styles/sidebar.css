@@ -1,0 +1,116 @@
+/* Custom Sidebar Styles */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.3);
+  border-radius: 3px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.sidebar-content {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.sidebar-section {
+  margin-bottom: 0;
+}
+
+.sidebar-section-header {
+  padding: 12px 16px 8px 16px !important;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sidebar-link {
+  padding: 12px 16px !important;
+  margin: 2px 8px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sidebar-link:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.sidebar-link.active {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-left: 3px solid #ffffff;
+}
+
+.sidebar.collapsed .sidebar-link {
+  padding: 12px !important;
+  margin: 2px 8px;
+  justify-content: center;
+  text-align: center;
+}
+
+.sidebar.collapsed .sidebar-link i {
+  margin: 0 !important;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.user-profile {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure sidebar takes full height and is scrollable */
+.layout-container {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* Fix for collapsed state */
+.sidebar.collapsed {
+  width: 80px !important;
+}
+
+.sidebar.collapsed .sidebar-header h6,
+.sidebar.collapsed .sidebar-header small,
+.sidebar.collapsed .user-profile div,
+.sidebar.collapsed .sidebar-section-header,
+.sidebar.collapsed .sidebar-link div {
+  display: none;
+}
+
+.sidebar.collapsed .sidebar-header {
+  text-align: center;
+  padding: 16px 8px;
+}
+
+.sidebar.collapsed .user-profile {
+  text-align: center;
+  padding: 16px 8px;
+}

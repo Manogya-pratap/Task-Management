@@ -1,50 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Row, Col, Form, Button, Table, Badge, Spinner } from 'react-bootstrap';
-import { useApp } from '../../contexts/AppContext';
-import api from '../../services/api';
-import moment from 'moment';
+import React, { useState, useCallback } from "react";
+import {
+  Card,
+  Row,
+  Col,
+  Form,
+  Button,
+  Table,
+  Badge,
+  Spinner,
+} from "react-bootstrap";
+import { useApp } from "../../contexts/AppContext";
+import api from "../../services/api";
+import moment from "moment";
 
 const Reports = () => {
-  const { projects, teams, users } = useApp();
+  const { teams, users } = useApp(); // eslint-disable-line no-unused-vars
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
   const [filters, setFilters] = useState({
-    reportType: 'project_summary',
-    dateRange: 'last_30_days',
-    startDate: '',
-    endDate: '',
-    teamId: '',
-    userId: '',
-    status: ''
+    reportType: "project_summary",
+    dateRange: "last_30_days",
+    startDate: "",
+    endDate: "",
+    teamId: "",
+    userId: "",
+    status: "",
   });
 
   const reportTypes = [
-    { value: 'project_summary', label: 'Project Summary' },
-    { value: 'task_completion', label: 'Task Completion Report' },
-    { value: 'team_performance', label: 'Team Performance' },
-    { value: 'user_productivity', label: 'User Productivity' },
-    { value: 'deadline_analysis', label: 'Deadline Analysis' }
+    { value: "project_summary", label: "Project Summary" },
+    { value: "task_completion", label: "Task Completion Report" },
+    { value: "team_performance", label: "Team Performance" },
+    { value: "user_productivity", label: "User Productivity" },
+    { value: "deadline_analysis", label: "Deadline Analysis" },
   ];
 
   const dateRanges = [
-    { value: 'last_7_days', label: 'Last 7 Days' },
-    { value: 'last_30_days', label: 'Last 30 Days' },
-    { value: 'last_90_days', label: 'Last 90 Days' },
-    { value: 'this_month', label: 'This Month' },
-    { value: 'last_month', label: 'Last Month' },
-    { value: 'custom', label: 'Custom Range' }
+    { value: "last_7_days", label: "Last 7 Days" },
+    { value: "last_30_days", label: "Last 30 Days" },
+    { value: "last_90_days", label: "Last 90 Days" },
+    { value: "this_month", label: "This Month" },
+    { value: "last_month", label: "Last Month" },
+    { value: "custom", label: "Custom Range" },
   ];
 
   // Helper function to convert frontend report type to backend format
   const getBackendReportType = (frontendType) => {
     const typeMapping = {
-      'project_summary': 'project_progress',
-      'task_completion': 'task_summary',
-      'team_performance': 'team_performance',
-      'user_productivity': 'user_activity',
-      'deadline_analysis': 'task_summary'
+      project_summary: "project_progress",
+      task_completion: "task_summary",
+      team_performance: "team_performance",
+      user_productivity: "user_activity",
+      deadline_analysis: "task_summary", // Use task_summary for deadline analysis
     };
-    return typeMapping[frontendType] || 'task_summary';
+    return typeMapping[frontendType] || "task_summary";
   };
 
   // Helper function to convert date range to actual dates
@@ -53,28 +62,30 @@ const Reports = () => {
     let start, end;
 
     switch (range) {
-      case 'last_7_days':
+      case "last_7_days":
         start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         end = now;
         break;
-      case 'last_30_days':
+      case "last_30_days":
         start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         end = now;
         break;
-      case 'last_90_days':
+      case "last_90_days":
         start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
         end = now;
         break;
-      case 'this_month':
+      case "this_month":
         start = new Date(now.getFullYear(), now.getMonth(), 1);
         end = now;
         break;
-      case 'last_month':
+      case "last_month":
         start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         end = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'custom':
-        start = startDate ? new Date(startDate) : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      case "custom":
+        start = startDate
+          ? new Date(startDate)
+          : new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         end = endDate ? new Date(endDate) : now;
         break;
       default:
@@ -87,9 +98,9 @@ const Reports = () => {
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({
+    setFilters((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -97,26 +108,44 @@ const Reports = () => {
     setLoading(true);
     try {
       // Convert filters to the format expected by the backend
+      const backendType = getBackendReportType(filters.reportType);
+      console.log("Generating report:", {
+        frontendType: filters.reportType,
+        backendType: backendType,
+        filters: filters,
+      });
+
       const reportRequest = {
-        reportType: getBackendReportType(filters.reportType),
-        dateRange: getDateRange(filters.dateRange, filters.startDate, filters.endDate),
+        reportType: backendType,
+        dateRange: getDateRange(
+          filters.dateRange,
+          filters.startDate,
+          filters.endDate
+        ),
         teamId: filters.teamId || undefined,
         userId: filters.userId || undefined,
-        format: 'json'
+        format: "json",
       };
 
-      const response = await api.post('/reports/generate', reportRequest);
-      
-      if (response.data.status === 'success') {
+      console.log("Sending report request:", reportRequest);
+
+      const response = await api.post("/reports/generate", reportRequest);
+
+      console.log("Report response:", response.data);
+
+      if (response.data.status === "success") {
         setReportData(response.data.data.report);
       } else {
-        throw new Error(response.data.message || 'Failed to generate report');
+        throw new Error(response.data.message || "Failed to generate report");
       }
     } catch (error) {
-      console.error('Error generating report:', error);
-      
+      console.error("Error generating report:", error);
+
       // Show user-friendly error message
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to generate report';
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to generate report";
       alert(`Report Generation Failed: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -124,20 +153,111 @@ const Reports = () => {
   };
 
   const exportReport = async (format) => {
+    if (!reportData) {
+      alert("Please generate a report first before exporting.");
+      return;
+    }
+
     try {
-      const response = await api.post(`/reports/export/${format}`, filters, {
-        responseType: 'blob'
+      setLoading(true);
+
+      // Create export request with current filters and report data
+      const exportRequest = {
+        reportType: getBackendReportType(filters.reportType),
+        dateRange: getDateRange(
+          filters.dateRange,
+          filters.startDate,
+          filters.endDate
+        ),
+        teamId: filters.teamId || undefined,
+        userId: filters.userId || undefined,
+        format: format,
+        data: reportData, // Include the current report data
+      };
+
+      const response = await api.post("/reports/generate", exportRequest, {
+        responseType: "blob",
+        headers: {
+          Accept:
+            format === "xlsx"
+              ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              : "application/pdf",
+        },
       });
-      
+
+      // Create download link
       const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
-      link.setAttribute('download', `report_${moment().format('YYYY-MM-DD')}.${format}`);
+
+      // Set filename with current date
+      const filename = `${filters.reportType}_report_${moment().format("YYYY-MM-DD")}.${format}`;
+      link.setAttribute("download", filename);
+
+      // Trigger download
       document.body.appendChild(link);
       link.click();
       link.remove();
+
+      // Clean up
+      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error exporting report:', error);
+      console.error("Error exporting report:", error);
+
+      // Fallback: Create a simple export using current data
+      if (format === "xlsx") {
+        exportToExcel();
+      } else {
+        alert("PDF export is not available. Please try Excel export.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback Excel export function
+  const exportToExcel = () => {
+    if (!reportData) return;
+
+    try {
+      // Create CSV content
+      let csvContent = "";
+
+      if (reportData.type === "project_progress" && reportData.projects) {
+        csvContent =
+          "Project Name,Status,Progress,Total Tasks,Completed Tasks,Start Date,End Date\n";
+        reportData.projects.forEach((project) => {
+          csvContent += `"${project.projectName}","${project.status}","${project.progress.completionPercentage}%","${project.progress.totalTasks}","${project.progress.completedTasks}","${project.startDate || "Not set"}","${project.endDate || "No deadline"}"\n`;
+        });
+      } else if (reportData.type === "task_summary" && reportData.tasks) {
+        csvContent =
+          "Task Title,Status,Priority,Assigned To,Project,Due Date\n";
+        reportData.tasks.forEach((task) => {
+          csvContent += `"${task.title}","${task.status}","${task.priority}","${task.assignedTo}","${task.project}","${task.dueDate || "No deadline"}"\n`;
+        });
+      } else if (reportData.type === "team_performance" && reportData.teams) {
+        csvContent = "Team,Department,Members,Total Tasks,Completed Tasks\n";
+        reportData.teams.forEach((team) => {
+          csvContent += `"${team.teamName}","${team.department}","${team.totalMembers}","${team.totalTasks}","${team.completedTasks}"\n`;
+        });
+      }
+
+      // Create and download file
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      const url = URL.createObjectURL(blob);
+      link.setAttribute("href", url);
+      link.setAttribute(
+        "download",
+        `${filters.reportType}_report_${moment().format("YYYY-MM-DD")}.csv`
+      );
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Error creating CSV export:", error);
+      alert("Export failed. Please try again.");
     }
   };
 
@@ -172,22 +292,34 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {reportData.projects.map(project => (
+              {reportData.projects.map((project) => (
                 <tr key={project.projectId}>
                   <td>{project.projectName}</td>
                   <td>
-                    <Badge bg={project.status === 'completed' ? 'success' : 
-                              project.status === 'active' ? 'primary' : 'secondary'}>
+                    <Badge
+                      bg={
+                        project.status === "completed"
+                          ? "success"
+                          : project.status === "active"
+                            ? "primary"
+                            : "secondary"
+                      }
+                    >
                       {project.status}
                     </Badge>
                   </td>
                   <td>
                     <div className="d-flex align-items-center">
-                      <div className="progress flex-grow-1 me-2" style={{ height: '20px' }}>
-                        <div 
-                          className="progress-bar" 
-                          role="progressbar" 
-                          style={{ width: `${project.progress.completionPercentage}%` }}
+                      <div
+                        className="progress flex-grow-1 me-2"
+                        style={{ height: "20px" }}
+                      >
+                        <div
+                          className="progress-bar"
+                          role="progressbar"
+                          style={{
+                            width: `${project.progress.completionPercentage}%`,
+                          }}
                         >
                           {project.progress.completionPercentage}%
                         </div>
@@ -196,8 +328,16 @@ const Reports = () => {
                   </td>
                   <td>{project.progress.totalTasks}</td>
                   <td>{project.progress.completedTasks}</td>
-                  <td>{project.startDate ? moment(project.startDate).format('MMM DD, YYYY') : 'Not set'}</td>
-                  <td>{project.endDate ? moment(project.endDate).format('MMM DD, YYYY') : 'No deadline'}</td>
+                  <td>
+                    {project.startDate
+                      ? moment(project.startDate).format("MMM DD, YYYY")
+                      : "Not set"}
+                  </td>
+                  <td>
+                    {project.endDate
+                      ? moment(project.endDate).format("MMM DD, YYYY")
+                      : "No deadline"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -219,25 +359,33 @@ const Reports = () => {
           <Row className="mb-4">
             <Col md={3}>
               <div className="text-center">
-                <h3 className="text-primary">{reportData.summary.totalTasks}</h3>
+                <h3 className="text-primary">
+                  {reportData.summary.totalTasks}
+                </h3>
                 <p className="text-muted">Total Tasks</p>
               </div>
             </Col>
             <Col md={3}>
               <div className="text-center">
-                <h3 className="text-success">{reportData.summary.statusBreakdown.completed || 0}</h3>
+                <h3 className="text-success">
+                  {reportData.summary.statusBreakdown.completed || 0}
+                </h3>
                 <p className="text-muted">Completed</p>
               </div>
             </Col>
             <Col md={3}>
               <div className="text-center">
-                <h3 className="text-info">{reportData.summary.statusBreakdown.in_progress || 0}</h3>
+                <h3 className="text-info">
+                  {reportData.summary.statusBreakdown.in_progress || 0}
+                </h3>
                 <p className="text-muted">In Progress</p>
               </div>
             </Col>
             <Col md={3}>
               <div className="text-center">
-                <h3 className="text-warning">{reportData.summary.statusBreakdown.pending || 0}</h3>
+                <h3 className="text-warning">
+                  {reportData.summary.statusBreakdown.pending || 0}
+                </h3>
                 <p className="text-muted">Pending</p>
               </div>
             </Col>
@@ -270,24 +418,42 @@ const Reports = () => {
                 </tr>
               </thead>
               <tbody>
-                {reportData.tasks.slice(0, 10).map(task => (
+                {reportData.tasks.slice(0, 10).map((task) => (
                   <tr key={task.id}>
                     <td>{task.title}</td>
                     <td>
-                      <Badge bg={task.status === 'completed' ? 'success' : 
-                                task.status === 'in_progress' ? 'warning' : 'secondary'}>
-                        {task.status.replace('_', ' ')}
+                      <Badge
+                        bg={
+                          task.status === "completed"
+                            ? "success"
+                            : task.status === "in_progress"
+                              ? "warning"
+                              : "secondary"
+                        }
+                      >
+                        {task.status.replace("_", " ")}
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg={task.priority === 'high' ? 'danger' : 
-                                task.priority === 'medium' ? 'warning' : 'secondary'}>
+                      <Badge
+                        bg={
+                          task.priority === "high"
+                            ? "danger"
+                            : task.priority === "medium"
+                              ? "warning"
+                              : "secondary"
+                        }
+                      >
                         {task.priority}
                       </Badge>
                     </td>
                     <td>{task.assignedTo}</td>
                     <td>{task.project}</td>
-                    <td>{task.dueDate ? moment(task.dueDate).format('MMM DD, YYYY') : 'No deadline'}</td>
+                    <td>
+                      {task.dueDate
+                        ? moment(task.dueDate).format("MMM DD, YYYY")
+                        : "No deadline"}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -319,7 +485,7 @@ const Reports = () => {
               </tr>
             </thead>
             <tbody>
-              {reportData.teams.map(team => (
+              {reportData.teams.map((team) => (
                 <tr key={team.teamId}>
                   <td>{team.teamName}</td>
                   <td>{team.department}</td>
@@ -327,13 +493,20 @@ const Reports = () => {
                   <td>{team.totalTasks}</td>
                   <td>{team.completedTasks}</td>
                   <td>
-                    {team.memberPerformance.map(member => (
+                    {team.memberPerformance.map((member) => (
                       <div key={member.userId} className="mb-1">
                         <small>
-                          {member.name}: 
-                          <Badge bg={member.completionRate >= 80 ? 'success' : 
-                                    member.completionRate >= 60 ? 'warning' : 'danger'} 
-                                 className="ms-1">
+                          {member.name}:
+                          <Badge
+                            bg={
+                              member.completionRate >= 80
+                                ? "success"
+                                : member.completionRate >= 60
+                                  ? "warning"
+                                  : "danger"
+                            }
+                            className="ms-1"
+                          >
                             {member.completionRate}%
                           </Badge>
                         </small>
@@ -373,7 +546,7 @@ const Reports = () => {
                   value={filters.reportType}
                   onChange={handleFilterChange}
                 >
-                  {reportTypes.map(type => (
+                  {reportTypes.map((type) => (
                     <option key={type.value} value={type.value}>
                       {type.label}
                     </option>
@@ -389,7 +562,7 @@ const Reports = () => {
                   value={filters.dateRange}
                   onChange={handleFilterChange}
                 >
-                  {dateRanges.map(range => (
+                  {dateRanges.map((range) => (
                     <option key={range.value} value={range.value}>
                       {range.label}
                     </option>
@@ -406,7 +579,7 @@ const Reports = () => {
                   onChange={handleFilterChange}
                 >
                   <option value="">All Teams</option>
-                  {teams.map(team => (
+                  {teams.map((team) => (
                     <option key={team._id} value={team._id}>
                       {team.name}
                     </option>
@@ -423,7 +596,7 @@ const Reports = () => {
                   onChange={handleFilterChange}
                 >
                   <option value="">All Users</option>
-                  {users.map(user => (
+                  {users.map((user) => (
                     <option key={user._id} value={user._id}>
                       {user.firstName} {user.lastName}
                     </option>
@@ -433,7 +606,7 @@ const Reports = () => {
             </Col>
           </Row>
 
-          {filters.dateRange === 'custom' && (
+          {filters.dateRange === "custom" && (
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -461,8 +634,8 @@ const Reports = () => {
           )}
 
           <div className="d-flex gap-2">
-            <Button 
-              variant="primary" 
+            <Button
+              variant="primary"
               onClick={generateReport}
               disabled={loading}
             >
@@ -478,19 +651,19 @@ const Reports = () => {
                 </>
               )}
             </Button>
-            
+
             {reportData && (
               <>
-                <Button 
-                  variant="outline-success" 
-                  onClick={() => exportReport('xlsx')}
+                <Button
+                  variant="outline-success"
+                  onClick={() => exportReport("xlsx")}
                 >
                   <i className="fas fa-file-excel me-2"></i>
                   Export Excel
                 </Button>
-                <Button 
-                  variant="outline-danger" 
-                  onClick={() => exportReport('pdf')}
+                <Button
+                  variant="outline-danger"
+                  onClick={() => exportReport("pdf")}
                 >
                   <i className="fas fa-file-pdf me-2"></i>
                   Export PDF
@@ -511,50 +684,68 @@ const Reports = () => {
 
       {reportData && !loading && (
         <div>
-          {(filters.reportType === 'project_summary' && reportData.type === 'project_progress') && renderProjectSummary()}
-          {(filters.reportType === 'task_completion' && reportData.type === 'task_summary') && renderTaskCompletion()}
-          {(filters.reportType === 'team_performance' && reportData.type === 'team_performance') && renderTeamPerformance()}
-          {(filters.reportType === 'user_productivity' && reportData.type === 'user_activity') && (
-            <Card className="mb-4">
-              <Card.Header>
-                <h5>User Activity Report</h5>
-              </Card.Header>
-              <Card.Body>
-                <Row className="mb-4">
-                  <Col md={12}>
-                    <h6>User: {reportData.user?.name}</h6>
-                    <p className="text-muted">Role: {reportData.user?.role} | Department: {reportData.user?.department}</p>
-                  </Col>
-                </Row>
-                <Row className="mb-4">
-                  <Col md={3}>
-                    <div className="text-center">
-                      <h3 className="text-primary">{reportData.summary?.totalTasks}</h3>
-                      <p className="text-muted">Total Tasks</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center">
-                      <h3 className="text-success">{reportData.summary?.completedTasks}</h3>
-                      <p className="text-muted">Completed</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center">
-                      <h3 className="text-info">{reportData.summary?.inProgressTasks}</h3>
-                      <p className="text-muted">In Progress</p>
-                    </div>
-                  </Col>
-                  <Col md={3}>
-                    <div className="text-center">
-                      <h3 className="text-warning">{reportData.summary?.overdueTasks}</h3>
-                      <p className="text-muted">Overdue</p>
-                    </div>
-                  </Col>
-                </Row>
-              </Card.Body>
-            </Card>
-          )}
+          {filters.reportType === "project_summary" &&
+            reportData.type === "project_progress" &&
+            renderProjectSummary()}
+          {filters.reportType === "task_completion" &&
+            reportData.type === "task_summary" &&
+            renderTaskCompletion()}
+          {filters.reportType === "team_performance" &&
+            reportData.type === "team_performance" &&
+            renderTeamPerformance()}
+          {filters.reportType === "user_productivity" &&
+            reportData.type === "user_activity" && (
+              <Card className="mb-4">
+                <Card.Header>
+                  <h5>User Activity Report</h5>
+                </Card.Header>
+                <Card.Body>
+                  <Row className="mb-4">
+                    <Col md={12}>
+                      <h6>User: {reportData.user?.name}</h6>
+                      <p className="text-muted">
+                        Role: {reportData.user?.role} | Department:{" "}
+                        {reportData.user?.department}
+                      </p>
+                    </Col>
+                  </Row>
+                  <Row className="mb-4">
+                    <Col md={3}>
+                      <div className="text-center">
+                        <h3 className="text-primary">
+                          {reportData.summary?.totalTasks}
+                        </h3>
+                        <p className="text-muted">Total Tasks</p>
+                      </div>
+                    </Col>
+                    <Col md={3}>
+                      <div className="text-center">
+                        <h3 className="text-success">
+                          {reportData.summary?.completedTasks}
+                        </h3>
+                        <p className="text-muted">Completed</p>
+                      </div>
+                    </Col>
+                    <Col md={3}>
+                      <div className="text-center">
+                        <h3 className="text-info">
+                          {reportData.summary?.inProgressTasks}
+                        </h3>
+                        <p className="text-muted">In Progress</p>
+                      </div>
+                    </Col>
+                    <Col md={3}>
+                      <div className="text-center">
+                        <h3 className="text-warning">
+                          {reportData.summary?.overdueTasks}
+                        </h3>
+                        <p className="text-muted">Overdue</p>
+                      </div>
+                    </Col>
+                  </Row>
+                </Card.Body>
+              </Card>
+            )}
         </div>
       )}
 
@@ -563,7 +754,9 @@ const Reports = () => {
           <Card.Body className="text-center py-5">
             <i className="fas fa-chart-bar fa-3x text-muted mb-3"></i>
             <h5 className="text-muted">No Report Generated</h5>
-            <p className="text-muted">Select your filters and click "Generate Report" to view data</p>
+            <p className="text-muted">
+              Select your filters and click "Generate Report" to view data
+            </p>
           </Card.Body>
         </Card>
       )}

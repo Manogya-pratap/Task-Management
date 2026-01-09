@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Card, Button, Table, Modal, Form, Row, Col, Badge, Alert, Spinner } from 'react-bootstrap';
-import { useApp } from '../../contexts/AppContext';
-import { useAuth } from '../../contexts/AuthContext';
-import api from '../../services/api';
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  Button,
+  Table,
+  Modal,
+  Form,
+  Row,
+  Col,
+  Badge,
+  Alert,
+  Spinner,
+} from "react-bootstrap";
+import { useApp } from "../../contexts/AppContext";
+import { useAuth } from "../../contexts/AuthContext";
+import api from "../../services/api";
 
 const UserManagement = () => {
   const { users, teams, fetchUsers, fetchTeams } = useApp();
@@ -12,34 +23,34 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
-  
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    username: '',
-    password: '',
-    role: '',
-    department: '',
-    teamId: '',
-    phone: '',
-    isActive: true
+    firstName: "",
+    lastName: "",
+    email: "",
+    username: "",
+    password: "",
+    role: "",
+    department: "",
+    teamId: null,
+    phone: "",
+    isActive: true,
   });
 
   const roles = [
-    { value: 'employee', label: 'Employee' },
-    { value: 'team_lead', label: 'Team Lead' },
-    { value: 'it_admin', label: 'IT Admin' },
-    { value: 'managing_director', label: 'Managing Director' }
+    { value: "employee", label: "Employee" },
+    { value: "team_lead", label: "Team Lead" },
+    { value: "it_admin", label: "IT Admin" },
+    { value: "managing_director", label: "Managing Director" },
   ];
 
   const departments = [
-    'IT Development',
-    'Human Resources', 
-    'Finance',
-    'Marketing',
-    'Operations',
-    'Sales'
+    "IT Development",
+    "Human Resources",
+    "Finance",
+    "Marketing",
+    "Operations",
+    "Sales",
   ];
 
   useEffect(() => {
@@ -51,30 +62,30 @@ const UserManagement = () => {
     if (userToEdit) {
       setEditingUser(userToEdit);
       setFormData({
-        firstName: userToEdit.firstName || '',
-        lastName: userToEdit.lastName || '',
-        email: userToEdit.email || '',
-        username: userToEdit.username || '',
-        password: '',
-        role: userToEdit.role || '',
-        department: userToEdit.department || '',
-        teamId: userToEdit.teamId?._id || '',
-        phone: userToEdit.phone || '',
-        isActive: userToEdit.isActive !== false
+        firstName: userToEdit.firstName || "",
+        lastName: userToEdit.lastName || "",
+        email: userToEdit.email || "",
+        username: userToEdit.username || "",
+        password: "",
+        role: userToEdit.role || "",
+        department: userToEdit.department || "",
+        teamId: userToEdit.teamId?._id || null,
+        phone: userToEdit.phone || "",
+        isActive: userToEdit.isActive !== false,
       });
     } else {
       setEditingUser(null);
       setFormData({
-        firstName: '',
-        lastName: '',
-        email: '',
-        username: '',
-        password: '',
-        role: '',
-        department: '',
-        teamId: '',
-        phone: '',
-        isActive: true
+        firstName: "",
+        lastName: "",
+        email: "",
+        username: "",
+        password: "",
+        role: "",
+        department: "",
+        teamId: null,
+        phone: "",
+        isActive: true,
       });
     }
     setShowModal(true);
@@ -91,9 +102,9 @@ const UserManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
   };
 
@@ -109,50 +120,63 @@ const UserManagement = () => {
       }
 
       if (editingUser) {
-        await api.put(`/users/${editingUser._id}`, submitData);
-        setSuccess('User updated successfully!');
+        await api.patch(`/users/${editingUser._id}`, submitData);
+        setSuccess("User updated successfully!");
       } else {
-        await api.post('/users', submitData);
-        setSuccess('User created successfully!');
+        await api.post("/users", submitData);
+        setSuccess("User created successfully!");
       }
-      
+
       await fetchUsers();
       setTimeout(() => {
         handleCloseModal();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to save user');
+      setError(err.response?.data?.message || "Failed to save user");
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-    
+    if (!window.confirm("Are you sure you want to delete this user?")) return;
+
     setLoading(true);
     try {
       await api.delete(`/users/${userId}`);
-      await fetchUsers();
-      setSuccess('User deleted successfully!');
+
+      // Force refresh with a slight delay to ensure backend processes the deletion
+      setTimeout(async () => {
+        await fetchUsers(true); // Force refresh
+      }, 100);
+
+      setSuccess("User deleted successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to delete user');
+      setError(err.response?.data?.message || "Failed to delete user");
       setTimeout(() => setError(null), 3000);
+      // Refresh users even on error to ensure UI consistency
+      fetchUsers(true);
     } finally {
       setLoading(false);
     }
   };
 
-  const canManageUsers = user?.role === 'managing_director' || user?.role === 'it_admin';
+  const canManageUsers =
+    user?.role === "managing_director" || user?.role === "it_admin";
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'managing_director': return 'danger';
-      case 'it_admin': return 'warning';
-      case 'team_lead': return 'info';
-      case 'employee': return 'secondary';
-      default: return 'secondary';
+      case "managing_director":
+        return "danger";
+      case "it_admin":
+        return "warning";
+      case "team_lead":
+        return "info";
+      case "employee":
+        return "secondary";
+      default:
+        return "secondary";
     }
   };
 
@@ -164,8 +188,8 @@ const UserManagement = () => {
           User Management
         </h2>
         {canManageUsers && (
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => handleShowModal()}
             disabled={loading}
           >
@@ -205,27 +229,34 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {users.map(userItem => (
+                {users.map((userItem) => (
                   <tr key={userItem._id}>
                     <td>
                       <div className="d-flex align-items-center">
                         <div className="avatar-circle me-2">
-                          {userItem.firstName?.[0]}{userItem.lastName?.[0]}
+                          {userItem.firstName?.[0]}
+                          {userItem.lastName?.[0]}
                         </div>
                         <div>
-                          <strong>{userItem.firstName} {userItem.lastName}</strong>
-                          <div className="text-muted small">@{userItem.username}</div>
+                          <strong>
+                            {userItem.firstName} {userItem.lastName}
+                          </strong>
+                          <div className="text-muted small">
+                            @{userItem.username}
+                          </div>
                         </div>
                       </div>
                     </td>
                     <td>{userItem.email}</td>
                     <td>
                       <Badge bg={getRoleBadgeColor(userItem.role)}>
-                        {userItem.role?.replace('_', ' ').toUpperCase()}
+                        {userItem.role?.replace("_", " ").toUpperCase()}
                       </Badge>
                     </td>
                     <td>
-                      <Badge bg="info">{userItem.department || 'Not assigned'}</Badge>
+                      <Badge bg="info">
+                        {userItem.department || "Not assigned"}
+                      </Badge>
                     </td>
                     <td>
                       {userItem.teamId ? (
@@ -235,8 +266,8 @@ const UserManagement = () => {
                       )}
                     </td>
                     <td>
-                      <Badge bg={userItem.isActive ? 'success' : 'danger'}>
-                        {userItem.isActive ? 'Active' : 'Inactive'}
+                      <Badge bg={userItem.isActive ? "success" : "danger"}>
+                        {userItem.isActive ? "Active" : "Inactive"}
                       </Badge>
                     </td>
                     {canManageUsers && (
@@ -263,7 +294,10 @@ const UserManagement = () => {
                 ))}
                 {users.length === 0 && (
                   <tr>
-                    <td colSpan={canManageUsers ? 7 : 6} className="text-center py-4">
+                    <td
+                      colSpan={canManageUsers ? 7 : 6}
+                      className="text-center py-4"
+                    >
                       <i className="fas fa-users fa-3x text-muted mb-3"></i>
                       <p className="text-muted">No users found</p>
                     </td>
@@ -279,14 +313,14 @@ const UserManagement = () => {
       <Modal show={showModal} onHide={handleCloseModal} size="lg">
         <Modal.Header closeButton>
           <Modal.Title>
-            {editingUser ? 'Edit User' : 'Add New User'}
+            {editingUser ? "Edit User" : "Add New User"}
           </Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleSubmit}>
           <Modal.Body>
             {error && <Alert variant="danger">{error}</Alert>}
             {success && <Alert variant="success">{success}</Alert>}
-            
+
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
@@ -349,7 +383,8 @@ const UserManagement = () => {
               <Col md={6}>
                 <Form.Group className="mb-3">
                   <Form.Label>
-                    Password {editingUser ? '(leave blank to keep current)' : '*'}
+                    Password{" "}
+                    {editingUser ? "(leave blank to keep current)" : "*"}
                   </Form.Label>
                   <Form.Control
                     type="password"
@@ -386,7 +421,7 @@ const UserManagement = () => {
                     required
                   >
                     <option value="">Select Role</option>
-                    {roles.map(role => (
+                    {roles.map((role) => (
                       <option key={role.value} value={role.value}>
                         {role.label}
                       </option>
@@ -403,8 +438,10 @@ const UserManagement = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select Department</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
+                    {departments.map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
                     ))}
                   </Form.Select>
                 </Form.Group>
@@ -421,7 +458,7 @@ const UserManagement = () => {
                     onChange={handleInputChange}
                   >
                     <option value="">Select Team</option>
-                    {teams.map(team => (
+                    {teams.map((team) => (
                       <option key={team._id} value={team._id}>
                         {team.name} ({team.department})
                       </option>
@@ -446,18 +483,16 @@ const UserManagement = () => {
             <Button variant="secondary" onClick={handleCloseModal}>
               Cancel
             </Button>
-            <Button 
-              variant="primary" 
-              type="submit" 
-              disabled={loading}
-            >
+            <Button variant="primary" type="submit" disabled={loading}>
               {loading ? (
                 <>
                   <Spinner animation="border" size="sm" className="me-2" />
-                  {editingUser ? 'Updating...' : 'Creating...'}
+                  {editingUser ? "Updating..." : "Creating..."}
                 </>
+              ) : editingUser ? (
+                "Update User"
               ) : (
-                editingUser ? 'Update User' : 'Create User'
+                "Create User"
               )}
             </Button>
           </Modal.Footer>

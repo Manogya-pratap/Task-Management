@@ -20,34 +20,61 @@
   --neutral-700: #495057;
   --neutral-800: #343a40;
   --neutral-900: #212529;
-  
+
   /* Advanced Gradients */
-  --gradient-primary: linear-gradient(135deg, var(--primary-maroon) 0%, var(--primary-maroon-light) 100%);
-  --gradient-primary-soft: linear-gradient(135deg, var(--primary-maroon-light) 0%, var(--primary-maroon-ultra-light) 100%);
-  --gradient-secondary: linear-gradient(135deg, var(--secondary-gold) 0%, #ffed4e 100%);
-  --gradient-success: linear-gradient(135deg, var(--accent-green) 0%, #34ce57 100%);
+  --gradient-primary: linear-gradient(
+    135deg,
+    var(--primary-maroon) 0%,
+    var(--primary-maroon-light) 100%
+  );
+  --gradient-primary-soft: linear-gradient(
+    135deg,
+    var(--primary-maroon-light) 0%,
+    var(--primary-maroon-ultra-light) 100%
+  );
+  --gradient-secondary: linear-gradient(
+    135deg,
+    var(--secondary-gold) 0%,
+    #ffed4e 100%
+  );
+  --gradient-success: linear-gradient(
+    135deg,
+    var(--accent-green) 0%,
+    #34ce57 100%
+  );
   --gradient-info: linear-gradient(135deg, var(--accent-blue) 0%, #0ea5e9 100%);
-  --gradient-warning: linear-gradient(135deg, var(--accent-orange) 0%, #fb923c 100%);
+  --gradient-warning: linear-gradient(
+    135deg,
+    var(--accent-orange) 0%,
+    #fb923c 100%
+  );
   --gradient-danger: linear-gradient(135deg, #dc3545 0%, #ef4444 100%);
-  --gradient-purple: linear-gradient(135deg, var(--accent-purple) 0%, #8b5cf6 100%);
+  --gradient-purple: linear-gradient(
+    135deg,
+    var(--accent-purple) 0%,
+    #8b5cf6 100%
+  );
   --gradient-teal: linear-gradient(135deg, var(--accent-teal) 0%, #06d6a0 100%);
   --gradient-pink: linear-gradient(135deg, var(--accent-pink) 0%, #f472b6 100%);
-  
+
   /* Glass Morphism */
   --glass-bg: rgba(255, 255, 255, 0.25);
   --glass-border: rgba(255, 255, 255, 0.18);
   --glass-backdrop: blur(10px);
-  
+
   /* Advanced Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   --shadow-inner: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
   --shadow-maroon: 0 10px 25px rgba(128, 0, 32, 0.15);
   --shadow-maroon-lg: 0 20px 40px rgba(128, 0, 32, 0.2);
-  
+
   /* Border Radius */
   --border-radius-sm: 0.25rem;
   --border-radius-md: 0.375rem;
@@ -56,7 +83,7 @@
   --border-radius-2xl: 1rem;
   --border-radius-3xl: 1.5rem;
   --border-radius-full: 9999px;
-  
+
   /* Transitions */
   --transition-fast: 0.15s ease-in-out;
   --transition-normal: 0.3s ease-in-out;
@@ -68,20 +95,33 @@
 .App {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-family:
+    "Inter",
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    "Roboto",
+    sans-serif;
   position: relative;
 }
 
 .App::before {
-  content: '';
+  content: "";
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
-    radial-gradient(circle at 20% 80%, rgba(128, 0, 32, 0.05) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 215, 0, 0.05) 0%, transparent 50%);
+  background: radial-gradient(
+      circle at 20% 80%,
+      rgba(128, 0, 32, 0.05) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      circle at 80% 20%,
+      rgba(255, 215, 0, 0.05) 0%,
+      transparent 50%
+    );
   pointer-events: none;
   z-index: -1;
 }
@@ -94,19 +134,28 @@
 }
 
 .App-header::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.1),
+    transparent
+  );
   animation: shimmer 3s infinite;
 }
 
 @keyframes shimmer {
-  0% { left: -100%; }
-  100% { left: 100%; }
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
 /* Enhanced Card Styling */
@@ -122,7 +171,7 @@
 }
 
 .card::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -134,13 +183,17 @@
 }
 
 .card::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    transparent 100%
+  );
   pointer-events: none;
   opacity: 0;
   transition: opacity var(--transition-normal);
@@ -178,13 +231,18 @@
 }
 
 .card-header::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left var(--transition-slow);
 }
 
@@ -204,13 +262,18 @@
 }
 
 .btn::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
   transition: left var(--transition-slow);
 }
 
@@ -275,6 +338,34 @@
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.text-white {
+  color: white !important;
+}
+
+/* Fix hover effects */
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  filter: brightness(1.05);
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateX(2px);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-maroon);
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* Remove text blur on hover */
+* {
+  text-shadow: none !important;
+  filter: none !important;
 }
 
 /* Enhanced Table Styling */
@@ -423,7 +514,7 @@
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 0.75rem;
   }
-  
+
   .task-board {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.75rem;
@@ -434,58 +525,58 @@
   .navbar-brand {
     font-size: 1rem;
   }
-  
+
   .navbar-text {
     font-size: 0.875rem;
   }
-  
+
   .dashboard-metrics {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
     margin-bottom: 1.5rem;
   }
-  
+
   .task-board {
     grid-template-columns: 1fr;
     gap: 0.5rem;
   }
-  
+
   .task-column {
     padding: 0.75rem;
     min-height: 300px;
   }
-  
+
   .task-card {
     padding: 0.5rem;
     margin-bottom: 0.5rem;
   }
-  
+
   /* Mobile table improvements */
   .table-responsive {
     border-radius: 0.375rem;
     overflow: hidden;
   }
-  
+
   .table th,
   .table td {
     padding: 0.5rem;
     font-size: 0.875rem;
   }
-  
+
   /* Mobile modal improvements */
   .modal-dialog {
     margin: 0.5rem;
     max-width: calc(100% - 1rem);
   }
-  
+
   .modal-header {
     padding: 1rem;
   }
-  
+
   .modal-body {
     padding: 1rem;
   }
-  
+
   .modal-footer {
     padding: 1rem;
   }
@@ -496,56 +587,56 @@
     grid-template-columns: 1fr;
     gap: 0.75rem;
   }
-  
+
   .card-body {
     padding: 1rem;
   }
-  
+
   .btn-group {
     flex-direction: column;
   }
-  
+
   .btn-group .btn {
     border-radius: 0.375rem !important;
     margin-bottom: 0.25rem;
   }
-  
+
   /* Mobile form improvements */
   .form-floating {
     margin-bottom: 1rem;
   }
-  
+
   .form-control,
   .form-select {
     font-size: 16px; /* Prevent zoom on iOS */
     padding: 0.75rem;
   }
-  
+
   .input-group {
     flex-direction: column;
   }
-  
+
   .input-group .form-control,
   .input-group .btn {
     border-radius: 0.375rem !important;
     margin-bottom: 0.25rem;
   }
-  
+
   /* Mobile navigation improvements */
   .navbar-nav {
     text-align: center;
   }
-  
+
   .navbar-nav .nav-link {
     padding: 0.75rem 1rem;
   }
-  
+
   /* Mobile progress indicators */
   .progress {
     height: 0.75rem;
     margin-bottom: 0.5rem;
   }
-  
+
   /* Mobile badge adjustments */
   .badge {
     font-size: 0.7rem;
@@ -558,26 +649,26 @@
   .card {
     transition: none; /* Disable hover effects on touch devices */
   }
-  
+
   .task-card:hover {
     transform: none;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
-  
+
   .btn {
     padding: 0.75rem 1rem; /* Larger touch targets */
   }
-  
+
   .nav-link {
     padding: 1rem;
   }
-  
+
   /* Larger touch targets for interactive elements */
   .form-check-input {
     width: 1.25rem;
     height: 1.25rem;
   }
-  
+
   .close {
     padding: 1rem;
     font-size: 1.5rem;
@@ -589,12 +680,12 @@
   .dashboard-metrics {
     grid-template-columns: repeat(4, 1fr);
   }
-  
+
   .task-board {
     grid-template-columns: repeat(4, 1fr);
     min-height: 250px;
   }
-  
+
   .task-column {
     min-height: 200px;
   }
@@ -605,11 +696,11 @@
   .card {
     border: 2px solid #000;
   }
-  
+
   .btn {
     border-width: 2px;
   }
-  
+
   .task-card {
     border: 1px solid #000;
   }
@@ -622,7 +713,7 @@
   .btn {
     transition: none;
   }
-  
+
   .task-card:hover {
     transform: none;
   }
@@ -633,22 +724,22 @@
   .App {
     background: white !important;
   }
-  
+
   .card {
     border: 1px solid #000 !important;
     box-shadow: none !important;
     break-inside: avoid;
   }
-  
+
   .task-board {
     display: block;
   }
-  
+
   .task-column {
     break-inside: avoid;
     margin-bottom: 1rem;
   }
-  
+
   .btn,
   .navbar,
   .sidebar {

@@ -1,51 +1,89 @@
-import React, { useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useApp } from '../../contexts/AppContext';
-import { TaskCalendar } from '../calendar';
-import { ComponentLoader } from '../LoadingSpinner';
+import React, { useEffect, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useApp } from "../../contexts/AppContext";
+import TaskCalendar from "../calendar/TaskCalendar";
+import ProjectTimeline from "../timeline/ProjectTimeline";
+import { ComponentLoader } from "../LoadingSpinner";
 
 const MDDashboard = () => {
-  const { user, getUserFullName } = useAuth();
-  const { 
-    projects, 
-    tasks, 
-    teams, 
-    loading, 
-    errors, 
-    fetchAllData 
+  const { getUserFullName } = useAuth();
+  const {
+    projects,
+    tasks,
+    teams,
+    loading,
+    errors,
+    fetchAllData,
+    addNotification,
   } = useApp();
+
+  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
 
   useEffect(() => {
     // Fetch all data when component mounts
     fetchAllData(true); // Force refresh for dashboard
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getProjectStatusColor = (status) => {
     const colors = {
-      'planning': 'secondary',
-      'active': 'primary',
-      'completed': 'success',
-      'on_hold': 'warning'
+      planning: "secondary",
+      active: "primary",
+      completed: "success",
+      on_hold: "warning",
     };
-    return colors[status] || 'secondary';
+    return colors[status] || "secondary";
   };
 
   const getTaskStatusColor = (status) => {
     const colors = {
-      'new': 'secondary',
-      'scheduled': 'info',
-      'in_progress': 'warning',
-      'completed': 'success'
+      new: "secondary",
+      scheduled: "info",
+      in_progress: "warning",
+      completed: "success",
     };
-    return colors[status] || 'secondary';
+    return colors[status] || "secondary";
   };
 
+  // Check if data is available
+  if (!projects || !tasks || !teams) {
+    console.log("MDDashboard: Data not available", { projects, tasks, teams });
+    return <ComponentLoader text="Loading company dashboard..." />;
+  }
+
+  // Check if data arrays are empty but not loading
+  if (
+    projects.length === 0 &&
+    tasks.length === 0 &&
+    teams.length === 0 &&
+    !loading.global &&
+    !loading.projects &&
+    !loading.tasks &&
+    !loading.teams
+  ) {
+    console.log("MDDashboard: No data found");
+    return (
+      <div className="alert alert-info" role="alert">
+        <h5 className="alert-heading">
+          <i className="fas fa-info-circle me-2"></i>
+          No Data Available
+        </h5>
+        <p className="mb-0">
+          No projects, tasks, or teams found. Please create some data to get
+          started.
+        </p>
+      </div>
+    );
+  }
+
   if (loading.global || loading.projects || loading.tasks || loading.teams) {
+    console.log("MDDashboard: Still loading", { loading });
     return <ComponentLoader text="Loading company dashboard..." />;
   }
 
   if (errors.global || errors.projects || errors.tasks || errors.teams) {
-    const errorMessage = errors.global || errors.projects || errors.tasks || errors.teams;
+    const errorMessage =
+      errors.global || errors.projects || errors.tasks || errors.teams;
+    console.log("MDDashboard: Errors found", { errors });
     return (
       <div className="alert alert-danger" role="alert">
         <h5 className="alert-heading">
@@ -57,26 +95,47 @@ const MDDashboard = () => {
     );
   }
 
+  console.log("MDDashboard: Rendering with data", {
+    totalProjects: projects?.length,
+    totalTasks: tasks?.length,
+    totalTeams: teams?.length,
+  });
+
   // Calculate company-wide metrics
-  const totalProjects = projects.length;
-  const activeProjects = projects.filter(p => p.status === 'active').length;
-  const completedProjects = projects.filter(p => p.status === 'completed').length;
-  const totalTasks = tasks.length;
-  const completedTasks = tasks.filter(t => t.status === 'completed').length;
-  const totalTeams = teams.length;
-  const totalMembers = teams.reduce((sum, team) => sum + (team.members?.length || 0), 0);
+  const totalProjects = projects?.length || 0;
+  const activeProjects =
+    projects?.filter((p) => p.status === "active").length || 0;
+  const totalTasks = tasks?.length || 0;
+  const completedTasks =
+    tasks?.filter((t) => t.status === "completed").length || 0;
+  const totalTeams = teams?.length || 0;
+  const totalMembers =
+    teams?.reduce((sum, team) => sum + (team.members?.length || 0), 0) || 0;
 
   // Calculate completion percentage
-  const overallCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const overallCompletion =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Calculate task stats
   const taskStats = {
     statusStats: [
-      { _id: 'new', count: tasks.filter(t => t.status === 'new').length },
-      { _id: 'scheduled', count: tasks.filter(t => t.status === 'scheduled').length },
-      { _id: 'in_progress', count: tasks.filter(t => t.status === 'in_progress').length },
-      { _id: 'completed', count: tasks.filter(t => t.status === 'completed').length }
-    ].filter(stat => stat.count > 0)
+      {
+        _id: "new",
+        count: tasks?.filter((t) => t.status === "new").length || 0,
+      },
+      {
+        _id: "scheduled",
+        count: tasks?.filter((t) => t.status === "scheduled").length || 0,
+      },
+      {
+        _id: "in_progress",
+        count: tasks?.filter((t) => t.status === "in_progress").length || 0,
+      },
+      {
+        _id: "completed",
+        count: tasks?.filter((t) => t.status === "completed").length || 0,
+      },
+    ].filter((stat) => stat.count > 0),
   };
 
   return (
@@ -84,35 +143,47 @@ const MDDashboard = () => {
       {/* Welcome Header */}
       <div className="row mb-4">
         <div className="col-12">
-          <div className="card border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #8B0000 0%, #A52A2A 100%)' }}>
+          <div
+            className="card border-0 shadow-sm"
+            style={{
+              background: "linear-gradient(135deg, #800020 0%, #A0002A 100%)",
+            }}
+          >
             <div className="card-body text-white">
               <div className="row align-items-center">
                 <div className="col-md-8">
-                  <h2 className="card-title mb-2">
-                    <i className="fas fa-crown me-2"></i>
+                  <h2 className="card-title mb-2 text-white">
+                    <i className="fas fa-crown me-2 text-white"></i>
                     Welcome, {getUserFullName()}
                   </h2>
-                  <p className="mb-0 opacity-75">
-                    <i className="fas fa-building me-2"></i>
+                  <p className="mb-0 text-white opacity-75">
+                    <i className="fas fa-building me-2 text-white"></i>
                     Managing Director - Company Overview Dashboard
                   </p>
                 </div>
                 <div className="col-md-4 text-md-end">
                   <div className="d-flex flex-column align-items-md-end">
-                    <small className="opacity-75 mb-1">
-                      <i className="fas fa-calendar me-1"></i>
-                      {new Date().toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
-                    </small>
-                    <small className="opacity-75">
-                      <i className="fas fa-clock me-1"></i>
-                      {new Date().toLocaleTimeString('en-US', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
+                    {/* Test Notification Button */}
+                    <button
+                      className="btn btn-light btn-sm mb-2"
+                      onClick={() => {
+                        addNotification({
+                          type: "success",
+                          message: "Notification system is working!",
+                          title: "Test Notification",
+                        });
+                      }}
+                    >
+                      <i className="fas fa-bell me-1"></i>
+                      Test Notifications
+                    </button>
+                    <small className="opacity-75 mb-1 text-white">
+                      <i className="fas fa-calendar me-1 text-white"></i>
+                      {new Date().toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
                       })}
                     </small>
                   </div>
@@ -187,12 +258,14 @@ const MDDashboard = () => {
                   <i className="fas fa-chart-line fa-2x text-success"></i>
                 </div>
               </div>
-              <h3 className="card-title text-success mb-1">{overallCompletion}%</h3>
+              <h3 className="card-title text-success mb-1">
+                {overallCompletion}%
+              </h3>
               <p className="card-text text-muted mb-2">Overall Progress</p>
-              <div className="progress" style={{ height: '6px' }}>
-                <div 
-                  className="progress-bar bg-success" 
-                  role="progressbar" 
+              <div className="progress" style={{ height: "6px" }}>
+                <div
+                  className="progress-bar bg-success"
+                  role="progressbar"
                   style={{ width: `${overallCompletion}%` }}
                 ></div>
               </div>
@@ -207,45 +280,55 @@ const MDDashboard = () => {
           <div className="col-12">
             <div className="card border-0 shadow-sm">
               <div className="card-header bg-white border-0 pb-0">
-                <h5 className="card-title mb-0">
-                  <i className="fas fa-chart-bar me-2 text-primary"></i>
+                <h5 className="card-title mb-0" style={{ color: "#800020" }}>
+                  <i
+                    className="fas fa-chart-bar me-2"
+                    style={{ color: "#800020" }}
+                  ></i>
                   Task Status Distribution
                 </h5>
               </div>
               <div className="card-body">
                 <div className="row">
-                  {taskStats.statusStats && taskStats.statusStats.map((stat, index) => (
-                    <div key={index} className="col-lg-3 col-md-6 mb-3">
-                      <div className={`card border-0 bg-${getTaskStatusColor(stat._id)} bg-opacity-10`}>
-                        <div className="card-body text-center py-3">
-                          <h4 className={`text-${getTaskStatusColor(stat._id)} mb-1`}>
-                            {stat.count}
-                          </h4>
-                          <p className="card-text text-capitalize mb-0">
-                            {stat._id.replace('_', ' ')} Tasks
-                          </p>
+                  {taskStats.statusStats &&
+                    taskStats.statusStats.map((stat, index) => (
+                      <div key={index} className="col-lg-3 col-md-6 mb-3">
+                        <div
+                          className={`card border-0 bg-${getTaskStatusColor(stat._id)} bg-opacity-10`}
+                        >
+                          <div className="card-body text-center py-3">
+                            <h4
+                              className={`text-${getTaskStatusColor(stat._id)} mb-1`}
+                            >
+                              {stat.count}
+                            </h4>
+                            <p className="card-text text-capitalize mb-0">
+                              {stat._id.replace("_", " ")} Tasks
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
-                
+
                 {/* Visual Progress Bar */}
                 <div className="mt-4">
                   <h6 className="mb-3">Company-wide Task Progress</h6>
-                  <div className="progress mb-2" style={{ height: '12px' }}>
-                    {taskStats.statusStats && taskStats.statusStats.map((stat, index) => {
-                      const percentage = totalTasks > 0 ? (stat.count / totalTasks) * 100 : 0;
-                      return (
-                        <div 
-                          key={index}
-                          className={`progress-bar bg-${getTaskStatusColor(stat._id)}`}
-                          role="progressbar" 
-                          style={{ width: `${percentage}%` }}
-                          title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
-                        ></div>
-                      );
-                    })}
+                  <div className="progress mb-2" style={{ height: "12px" }}>
+                    {taskStats.statusStats &&
+                      taskStats.statusStats.map((stat, index) => {
+                        const percentage =
+                          totalTasks > 0 ? (stat.count / totalTasks) * 100 : 0;
+                        return (
+                          <div
+                            key={index}
+                            className={`progress-bar bg-${getTaskStatusColor(stat._id)}`}
+                            role="progressbar"
+                            style={{ width: `${percentage}%` }}
+                            title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
+                          ></div>
+                        );
+                      })}
                   </div>
                   <div className="d-flex justify-content-between small text-muted">
                     <span>Task Distribution</span>
@@ -257,7 +340,14 @@ const MDDashboard = () => {
                 <div className="row mt-4">
                   <div className="col-md-4">
                     <div className="text-center">
-                      <div className="h5 text-success mb-1">{overallCompletion}%</div>
+                      <div
+                        className="h5 text-success mb-1 cursor-pointer"
+                        onClick={() => setShowCompletedTasks(true)}
+                        style={{ cursor: "pointer" }}
+                        title="Click to view completed tasks"
+                      >
+                        {overallCompletion}%
+                      </div>
                       <small className="text-muted">Completion Rate</small>
                     </div>
                   </div>
@@ -270,7 +360,7 @@ const MDDashboard = () => {
                   <div className="col-md-4">
                     <div className="text-center">
                       <div className="h5 text-warning mb-1">
-                        {tasks.filter(t => t.status === 'in_progress').length}
+                        {tasks.filter((t) => t.status === "in_progress").length}
                       </div>
                       <small className="text-muted">In Progress</small>
                     </div>
@@ -282,6 +372,18 @@ const MDDashboard = () => {
         </div>
       )}
 
+      {/* Timeline Integration */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <ProjectTimeline
+            onTaskClick={(task) => {
+              console.log("Timeline task clicked:", task);
+              // Add task detail modal or navigation here
+            }}
+          />
+        </div>
+      </div>
+
       {/* Recent Projects and Teams */}
       <div className="row mb-4">
         <div className="col-lg-8 mb-4">
@@ -292,9 +394,14 @@ const MDDashboard = () => {
                   <i className="fas fa-project-diagram me-2 text-primary"></i>
                   Recent Projects
                 </h5>
-                <a href="/projects" className="btn btn-sm btn-outline-primary">
-                  View All
-                </a>
+                <div className="d-flex align-items-center">
+                  <a
+                    href="/projects"
+                    className="btn btn-sm btn-outline-primary"
+                  >
+                    View All
+                  </a>
+                </div>
               </div>
             </div>
             <div className="card-body">
@@ -317,27 +424,44 @@ const MDDashboard = () => {
                     </thead>
                     <tbody>
                       {projects.slice(0, 5).map((project) => (
-                        <tr key={project._id}>
-                          <td>
+                        <tr
+                          key={project._id}
+                          className="hover:bg-light"
+                          style={{ transition: "background-color 0.2s ease" }}
+                        >
+                          <td className="py-3">
                             <div className="fw-medium">{project.name}</div>
-                            <small className="text-muted">{project.description}</small>
+                            <small
+                              className="text-muted text-truncate d-block"
+                              style={{ maxWidth: "200px" }}
+                              title={project.description}
+                            >
+                              {project.description}
+                            </small>
                           </td>
-                          <td>
+                          <td className="py-3">
                             <span className="badge bg-light text-dark">
-                              {project.teamId?.name || 'Unassigned'}
+                              {project.teamId?.name || "Unassigned"}
                             </span>
                           </td>
-                          <td>
-                            <span className={`badge bg-${getProjectStatusColor(project.status)}`}>
+                          <td className="py-3">
+                            <span
+                              className={`badge bg-${getProjectStatusColor(project.status)}`}
+                            >
                               {project.status}
                             </span>
                           </td>
-                          <td>
+                          <td className="py-3">
                             <div className="d-flex align-items-center">
-                              <div className="progress me-2" style={{ width: '60px', height: '6px' }}>
-                                <div 
-                                  className="progress-bar bg-success" 
-                                  style={{ width: `${project.completionPercentage || 0}%` }}
+                              <div
+                                className="progress me-2"
+                                style={{ width: "60px", height: "6px" }}
+                              >
+                                <div
+                                  className="progress-bar bg-success"
+                                  style={{
+                                    width: `${project.completionPercentage || 0}%`,
+                                  }}
                                 ></div>
                               </div>
                               <small className="text-muted">
@@ -345,9 +469,11 @@ const MDDashboard = () => {
                               </small>
                             </div>
                           </td>
-                          <td>
+                          <td className="py-3">
                             <small className="text-muted">
-                              {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No deadline'}
+                              {project.endDate
+                                ? new Date(project.endDate).toLocaleDateString()
+                                : "No deadline"}
                             </small>
                           </td>
                         </tr>
@@ -368,9 +494,11 @@ const MDDashboard = () => {
                   <i className="fas fa-users me-2 text-info"></i>
                   Teams Overview
                 </h5>
-                <a href="/teams" className="btn btn-sm btn-outline-info">
-                  View All
-                </a>
+                <div className="d-flex align-items-center">
+                  <a href="/teams" className="btn btn-sm btn-outline-info">
+                    View All
+                  </a>
+                </div>
               </div>
             </div>
             <div className="card-body">
@@ -382,11 +510,16 @@ const MDDashboard = () => {
               ) : (
                 <div className="list-group list-group-flush">
                   {teams.slice(0, 6).map((team) => (
-                    <div key={team._id} className="list-group-item border-0 px-0">
+                    <div
+                      key={team._id}
+                      className="list-group-item border-0 px-0"
+                    >
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <div className="fw-medium">{team.name}</div>
-                          <small className="text-muted">{team.department}</small>
+                          <small className="text-muted">
+                            {team.department}
+                          </small>
                         </div>
                         <div className="text-end">
                           <div className="badge bg-primary rounded-pill">
@@ -394,7 +527,8 @@ const MDDashboard = () => {
                           </div>
                           <div>
                             <small className="text-muted">
-                              Lead: {team.teamLead?.firstName} {team.teamLead?.lastName}
+                              Lead: {team.teamLead?.firstName}{" "}
+                              {team.teamLead?.lastName}
                             </small>
                           </div>
                         </div>
@@ -411,12 +545,116 @@ const MDDashboard = () => {
       {/* Calendar Integration */}
       <div className="row">
         <div className="col-12">
-          <TaskCalendar 
-            showDeadlineNotifications={true}
-            height="500px"
-          />
+          <TaskCalendar showDeadlineNotifications={true} height="500px" />
         </div>
       </div>
+
+      {/* Completed Tasks Modal */}
+      <div
+        className={`modal fade ${showCompletedTasks ? "show" : ""}`}
+        style={{ display: showCompletedTasks ? "block" : "none" }}
+        tabIndex="-1"
+      >
+        <div className="modal-dialog modal-xl">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h5 className="modal-title">
+                <i className="fas fa-check-circle me-2 text-success"></i>
+                Completed Tasks ({completedTasks})
+              </h5>
+              <button
+                type="button"
+                className="btn-close"
+                onClick={() => setShowCompletedTasks(false)}
+              ></button>
+            </div>
+            <div className="modal-body">
+              {tasks.filter((t) => t.status === "completed").length === 0 ? (
+                <div className="text-center py-4">
+                  <i className="fas fa-check-circle fa-3x text-muted mb-3"></i>
+                  <h5>No Completed Tasks</h5>
+                  <p className="text-muted">
+                    No tasks have been completed yet.
+                  </p>
+                </div>
+              ) : (
+                <div className="table-responsive">
+                  <table className="table table-hover">
+                    <thead>
+                      <tr>
+                        <th>Task</th>
+                        <th>Project</th>
+                        <th>Assigned To</th>
+                        <th>Completed Date</th>
+                        <th>Priority</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tasks
+                        .filter((t) => t.status === "completed")
+                        .map((task) => (
+                          <tr key={task._id}>
+                            <td>
+                              <div className="fw-medium">{task.title}</div>
+                              {task.description && (
+                                <small className="text-muted">
+                                  {task.description.substring(0, 100)}...
+                                </small>
+                              )}
+                            </td>
+                            <td>
+                              <span className="badge bg-light text-dark">
+                                {projects.find((p) => p._id === task.projectId)
+                                  ?.name || "No project"}
+                              </span>
+                            </td>
+                            <td>
+                              {task.assignedTo
+                                ? `${task.assignedTo.firstName} ${task.assignedTo.lastName}`
+                                : "Unassigned"}
+                            </td>
+                            <td>
+                              {task.completedDate
+                                ? new Date(
+                                    task.completedDate
+                                  ).toLocaleDateString()
+                                : new Date(task.updatedAt).toLocaleDateString()}
+                            </td>
+                            <td>
+                              <span
+                                className={`badge ${
+                                  task.priority === "high"
+                                    ? "bg-danger"
+                                    : task.priority === "medium"
+                                      ? "bg-warning"
+                                      : task.priority === "low"
+                                        ? "bg-info"
+                                        : "bg-secondary"
+                                }`}
+                              >
+                                {task.priority}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowCompletedTasks(false)}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {showCompletedTasks && <div className="modal-backdrop fade show"></div>}
     </div>
   );
 };

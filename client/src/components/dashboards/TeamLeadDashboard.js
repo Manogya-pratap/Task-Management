@@ -1,44 +1,38 @@
-import React, { useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import { useApp } from '../../contexts/AppContext';
-import { TaskCalendar } from '../calendar';
-import { ComponentLoader } from '../LoadingSpinner';
+import React, { useEffect } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import { useApp } from "../../contexts/AppContext";
+import TaskCalendar from "../calendar/TaskCalendar";
+import TaskBoard from "../TaskBoard";
+import { ComponentLoader } from "../LoadingSpinner";
 
 const TeamLeadDashboard = () => {
   const { user, getUserFullName } = useAuth();
-  const { 
-    projects, 
-    tasks, 
-    teams, 
-    users,
-    loading, 
-    errors, 
-    fetchAllData 
-  } = useApp();
+  const { projects, tasks, teams, users, loading, errors, fetchAllData } =
+    useApp();
 
   useEffect(() => {
     // Fetch all data when component mounts
     fetchAllData(true); // Force refresh for dashboard
-  }, []);
+  }, [fetchAllData]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const getProjectStatusColor = (status) => {
     const colors = {
-      'planning': 'secondary',
-      'active': 'primary',
-      'completed': 'success',
-      'on_hold': 'warning'
+      planning: "secondary",
+      active: "primary",
+      completed: "success",
+      on_hold: "warning",
     };
-    return colors[status] || 'secondary';
+    return colors[status] || "secondary";
   };
 
   const getTaskStatusColor = (status) => {
     const colors = {
-      'new': 'secondary',
-      'scheduled': 'info',
-      'in_progress': 'warning',
-      'completed': 'success'
+      new: "secondary",
+      scheduled: "info",
+      in_progress: "warning",
+      completed: "success",
     };
-    return colors[status] || 'secondary';
+    return colors[status] || "secondary";
   };
 
   if (loading.global || loading.projects || loading.tasks || loading.teams) {
@@ -46,7 +40,8 @@ const TeamLeadDashboard = () => {
   }
 
   if (errors.global || errors.projects || errors.tasks || errors.teams) {
-    const errorMessage = errors.global || errors.projects || errors.tasks || errors.teams;
+    const errorMessage =
+      errors.global || errors.projects || errors.tasks || errors.teams;
     return (
       <div className="alert alert-danger" role="alert">
         <h5 className="alert-heading">
@@ -59,49 +54,73 @@ const TeamLeadDashboard = () => {
   }
 
   // Filter data for team lead's team
-  const userTeam = teams.find(team => team._id === user.teamId);
-  const teamMembers = users.filter(u => u.teamId === user.teamId) || [];
-  const teamProjects = projects.filter(p => p.teamId === user.teamId);
-  const teamTasks = tasks.filter(t => 
-    teamMembers.some(member => member._id === t.assignedTo?._id) ||
-    teamProjects.some(project => project._id === t.projectId?._id)
+  const userTeam = teams.find((team) => team._id === user.teamId);
+  const teamMembers = users.filter((u) => u.teamId === user.teamId) || [];
+  const teamProjects = projects.filter((p) => p.teamId === user.teamId);
+  const teamTasks = tasks.filter(
+    (t) =>
+      teamMembers.some((member) => member._id === t.assignedTo?._id) ||
+      teamProjects.some((project) => project._id === t.projectId?._id)
   );
 
   // Calculate team metrics
   const totalProjects = teamProjects.length;
-  const activeProjects = teamProjects.filter(p => p.status === 'active').length;
+  const activeProjects = teamProjects.filter(
+    (p) => p.status === "active"
+  ).length;
   const totalTasks = teamTasks.length;
-  const completedTasks = teamTasks.filter(t => t.status === 'completed').length;
-  const inProgressTasks = teamTasks.filter(t => t.status === 'in_progress').length;
+  const completedTasks = teamTasks.filter(
+    (t) => t.status === "completed"
+  ).length;
+  const inProgressTasks = teamTasks.filter(
+    (t) => t.status === "in_progress"
+  ).length;
   const teamSize = teamMembers.length;
 
   // Calculate team completion percentage
-  const teamCompletion = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+  const teamCompletion =
+    totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
   // Calculate task stats for team
   const taskStats = {
     statusStats: [
-      { _id: 'new', count: teamTasks.filter(t => t.status === 'new').length },
-      { _id: 'scheduled', count: teamTasks.filter(t => t.status === 'scheduled').length },
-      { _id: 'in_progress', count: teamTasks.filter(t => t.status === 'in_progress').length },
-      { _id: 'completed', count: teamTasks.filter(t => t.status === 'completed').length }
-    ].filter(stat => stat.count > 0)
+      { _id: "new", count: teamTasks.filter((t) => t.status === "new").length },
+      {
+        _id: "scheduled",
+        count: teamTasks.filter((t) => t.status === "scheduled").length,
+      },
+      {
+        _id: "in_progress",
+        count: teamTasks.filter((t) => t.status === "in_progress").length,
+      },
+      {
+        _id: "completed",
+        count: teamTasks.filter((t) => t.status === "completed").length,
+      },
+    ].filter((stat) => stat.count > 0),
   };
 
   // Get tasks by team member
-  const tasksByMember = teamMembers.map(member => {
-    const memberTasks = teamTasks.filter(task => 
-      task.assignedTo && task.assignedTo._id === member._id
+  const tasksByMember = teamMembers.map((member) => {
+    const memberTasks = teamTasks.filter(
+      (task) => task.assignedTo && task.assignedTo._id === member._id
     );
-    const completedCount = memberTasks.filter(t => t.status === 'completed').length;
-    const inProgressCount = memberTasks.filter(t => t.status === 'in_progress').length;
-    
+    const completedCount = memberTasks.filter(
+      (t) => t.status === "completed"
+    ).length;
+    const inProgressCount = memberTasks.filter(
+      (t) => t.status === "in_progress"
+    ).length;
+
     return {
       ...member,
       totalTasks: memberTasks.length,
       completedTasks: completedCount,
       inProgressTasks: inProgressCount,
-      completion: memberTasks.length > 0 ? Math.round((completedCount / memberTasks.length) * 100) : 0
+      completion:
+        memberTasks.length > 0
+          ? Math.round((completedCount / memberTasks.length) * 100)
+          : 0,
     };
   });
 
@@ -110,32 +129,37 @@ const TeamLeadDashboard = () => {
       {/* Welcome Header */}
       <div className="row mb-4">
         <div className="col-12">
-          <div className="card border-0 shadow-sm" style={{ background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)' }}>
+          <div
+            className="card border-0 shadow-sm"
+            style={{
+              background: "linear-gradient(135deg, #800020 0%, #A0002A 100%)",
+            }}
+          >
             <div className="card-body text-white">
               <div className="row align-items-center">
                 <div className="col-md-8">
-                  <h2 className="card-title mb-2">
-                    <i className="fas fa-users-cog me-2"></i>
+                  <h2 className="card-title mb-2 text-white">
+                    <i className="fas fa-users-cog me-2 text-white"></i>
                     Welcome, {getUserFullName()}
                   </h2>
-                  <p className="mb-0 opacity-75">
-                    <i className="fas fa-user-tie me-2"></i>
+                  <p className="mb-0 text-white opacity-75">
+                    <i className="fas fa-user-tie me-2 text-white"></i>
                     Team Lead - {user.department} Department Dashboard
                   </p>
                 </div>
                 <div className="col-md-4 text-md-end">
                   <div className="d-flex flex-column align-items-md-end">
-                    <small className="opacity-75 mb-1">
-                      <i className="fas fa-calendar me-1"></i>
-                      {new Date().toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
+                    <small className="opacity-75 mb-1 text-white">
+                      <i className="fas fa-calendar me-1 text-white"></i>
+                      {new Date().toLocaleDateString("en-US", {
+                        weekday: "long",
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
                       })}
                     </small>
-                    <small className="opacity-75">
-                      <i className="fas fa-users me-1"></i>
+                    <small className="opacity-75 text-white">
+                      <i className="fas fa-users me-1 text-white"></i>
                       Managing {teamSize} team members
                     </small>
                   </div>
@@ -210,12 +234,14 @@ const TeamLeadDashboard = () => {
                   <i className="fas fa-chart-line fa-2x text-success"></i>
                 </div>
               </div>
-              <h3 className="card-title text-success mb-1">{teamCompletion}%</h3>
+              <h3 className="card-title text-success mb-1">
+                {teamCompletion}%
+              </h3>
               <p className="card-text text-muted mb-2">Team Progress</p>
-              <div className="progress" style={{ height: '6px' }}>
-                <div 
-                  className="progress-bar bg-success" 
-                  role="progressbar" 
+              <div className="progress" style={{ height: "6px" }}>
+                <div
+                  className="progress-bar bg-success"
+                  role="progressbar"
                   style={{ width: `${teamCompletion}%` }}
                 ></div>
               </div>
@@ -237,20 +263,25 @@ const TeamLeadDashboard = () => {
               </div>
               <div className="card-body">
                 <div className="row">
-                  {taskStats.statusStats && taskStats.statusStats.map((stat, index) => (
-                    <div key={index} className="col-lg-3 col-md-6 mb-3">
-                      <div className={`card border-0 bg-${getTaskStatusColor(stat._id)} bg-opacity-10`}>
-                        <div className="card-body text-center py-3">
-                          <h4 className={`text-${getTaskStatusColor(stat._id)} mb-1`}>
-                            {stat.count}
-                          </h4>
-                          <p className="card-text text-capitalize mb-0">
-                            {stat._id.replace('_', ' ')} Tasks
-                          </p>
+                  {taskStats.statusStats &&
+                    taskStats.statusStats.map((stat, index) => (
+                      <div key={index} className="col-lg-3 col-md-6 mb-3">
+                        <div
+                          className={`card border-0 bg-${getTaskStatusColor(stat._id)} bg-opacity-10`}
+                        >
+                          <div className="card-body text-center py-3">
+                            <h4
+                              className={`text-${getTaskStatusColor(stat._id)} mb-1`}
+                            >
+                              {stat.count}
+                            </h4>
+                            <p className="card-text text-capitalize mb-0">
+                              {stat._id.replace("_", " ")} Tasks
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
 
                 {/* Team Performance Visualization */}
@@ -258,19 +289,23 @@ const TeamLeadDashboard = () => {
                   <h6 className="mb-3">Team Performance Overview</h6>
                   <div className="row">
                     <div className="col-md-8">
-                      <div className="progress mb-2" style={{ height: '10px' }}>
-                        {taskStats.statusStats && taskStats.statusStats.map((stat, index) => {
-                          const percentage = totalTasks > 0 ? (stat.count / totalTasks) * 100 : 0;
-                          return (
-                            <div 
-                              key={index}
-                              className={`progress-bar bg-${getTaskStatusColor(stat._id)}`}
-                              role="progressbar" 
-                              style={{ width: `${percentage}%` }}
-                              title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
-                            ></div>
-                          );
-                        })}
+                      <div className="progress mb-2" style={{ height: "10px" }}>
+                        {taskStats.statusStats &&
+                          taskStats.statusStats.map((stat, index) => {
+                            const percentage =
+                              totalTasks > 0
+                                ? (stat.count / totalTasks) * 100
+                                : 0;
+                            return (
+                              <div
+                                key={index}
+                                className={`progress-bar bg-${getTaskStatusColor(stat._id)}`}
+                                role="progressbar"
+                                style={{ width: `${percentage}%` }}
+                                title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
+                              ></div>
+                            );
+                          })}
                       </div>
                       <div className="d-flex justify-content-between small text-muted">
                         <span>Team Task Distribution</span>
@@ -302,7 +337,9 @@ const TeamLeadDashboard = () => {
                             />
                           </svg>
                           <div className="position-absolute top-50 start-50 translate-middle text-center">
-                            <div className="h6 mb-0 text-info">{teamCompletion}%</div>
+                            <div className="h6 mb-0 text-info">
+                              {teamCompletion}%
+                            </div>
                             <small className="text-muted">Complete</small>
                           </div>
                         </div>
@@ -326,7 +363,10 @@ const TeamLeadDashboard = () => {
                   <i className="fas fa-project-diagram me-2 text-info"></i>
                   Team Projects
                 </h5>
-                <a href="/team-projects" className="btn btn-sm btn-outline-info">
+                <a
+                  href="/team-projects"
+                  className="btn btn-sm btn-outline-info"
+                >
                   View All
                 </a>
               </div>
@@ -354,27 +394,43 @@ const TeamLeadDashboard = () => {
                     </thead>
                     <tbody>
                       {teamProjects.slice(0, 5).map((project) => {
-                        const projectTasks = teamTasks.filter(t => t.projectId && t.projectId._id === project._id);
-                        const completedProjectTasks = projectTasks.filter(t => t.status === 'completed').length;
-                        const projectProgress = projectTasks.length > 0 ? 
-                          Math.round((completedProjectTasks / projectTasks.length) * 100) : 0;
+                        const projectTasks = teamTasks.filter(
+                          (t) => t.projectId && t.projectId._id === project._id
+                        );
+                        const completedProjectTasks = projectTasks.filter(
+                          (t) => t.status === "completed"
+                        ).length;
+                        const projectProgress =
+                          projectTasks.length > 0
+                            ? Math.round(
+                                (completedProjectTasks / projectTasks.length) *
+                                  100
+                              )
+                            : 0;
 
                         return (
                           <tr key={project._id}>
                             <td>
                               <div className="fw-medium">{project.name}</div>
-                              <small className="text-muted">{project.description}</small>
+                              <small className="text-muted">
+                                {project.description}
+                              </small>
                             </td>
                             <td>
-                              <span className={`badge bg-${getProjectStatusColor(project.status)}`}>
+                              <span
+                                className={`badge bg-${getProjectStatusColor(project.status)}`}
+                              >
                                 {project.status}
                               </span>
                             </td>
                             <td>
                               <div className="d-flex align-items-center">
-                                <div className="progress me-2" style={{ width: '60px', height: '6px' }}>
-                                  <div 
-                                    className="progress-bar bg-success" 
+                                <div
+                                  className="progress me-2"
+                                  style={{ width: "60px", height: "6px" }}
+                                >
+                                  <div
+                                    className="progress-bar bg-success"
                                     style={{ width: `${projectProgress}%` }}
                                   ></div>
                                 </div>
@@ -390,7 +446,11 @@ const TeamLeadDashboard = () => {
                             </td>
                             <td>
                               <small className="text-muted">
-                                {project.endDate ? new Date(project.endDate).toLocaleDateString() : 'No deadline'}
+                                {project.endDate
+                                  ? new Date(
+                                      project.endDate
+                                    ).toLocaleDateString()
+                                  : "No deadline"}
                               </small>
                             </td>
                           </tr>
@@ -426,19 +486,22 @@ const TeamLeadDashboard = () => {
               ) : (
                 <div className="list-group list-group-flush">
                   {tasksByMember.slice(0, 6).map((member) => (
-                    <div key={member._id} className="list-group-item border-0 px-0">
+                    <div
+                      key={member._id}
+                      className="list-group-item border-0 px-0"
+                    >
                       <div className="d-flex justify-content-between align-items-start">
                         <div className="flex-grow-1">
                           <div className="fw-medium">
                             {member.firstName} {member.lastName}
                           </div>
                           <small className="text-muted text-capitalize">
-                            {member.role.replace('_', ' ')}
+                            {member.role.replace("_", " ")}
                           </small>
                           <div className="mt-2">
-                            <div className="progress" style={{ height: '4px' }}>
-                              <div 
-                                className="progress-bar bg-success" 
+                            <div className="progress" style={{ height: "4px" }}>
+                              <div
+                                className="progress-bar bg-success"
                                 style={{ width: `${member.completion}%` }}
                               ></div>
                             </div>
@@ -471,13 +534,38 @@ const TeamLeadDashboard = () => {
         </div>
       </div>
 
+      {/* Team Task Board */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-0 pb-0">
+              <div className="d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">
+                  <i className="fas fa-tasks me-2 text-primary"></i>
+                  {userTeam ? `${userTeam.name} Team Board` : "Team Task Board"}
+                </h5>
+                <a
+                  href="/team-tasks"
+                  className="btn btn-sm btn-outline-primary"
+                >
+                  Full Board View
+                </a>
+              </div>
+            </div>
+            <div className="card-body p-0">
+              <TaskBoard
+                projectId={null} // Show all team tasks
+                className="team-task-board"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Calendar Integration */}
       <div className="row">
         <div className="col-12">
-          <TaskCalendar 
-            showDeadlineNotifications={true}
-            height="500px"
-          />
+          <TaskCalendar showDeadlineNotifications={true} height="500px" />
         </div>
       </div>
     </div>

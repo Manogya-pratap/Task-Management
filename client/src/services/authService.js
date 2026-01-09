@@ -1,23 +1,29 @@
-import api from './api';
+import api from "./api";
 
 class AuthService {
   // Login user
   async login(credentials) {
     try {
-      const response = await api.post('/auth/login', credentials);
-      const { token, data } = response.data;
-      
-      if (token && data.user) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return { success: true, user: data.user, token };
+      const response = await api.post("/auth/login", credentials);
+      const responseData = response.data;
+
+      // Handle different response formats
+      if (responseData.status === "success") {
+        const token = responseData.token;
+        const user = responseData.data?.user;
+
+        if (token && user) {
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          return { success: true, user, token };
+        }
       }
-      
-      return { success: false, message: 'Invalid response format' };
+
+      return { success: false, message: "Invalid response format" };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: error.response?.data?.message || "Login failed",
       };
     }
   }
@@ -25,21 +31,27 @@ class AuthService {
   // Register user
   async register(userData) {
     try {
-      const response = await api.post('/auth/signup', userData);
-      const { token, data } = response.data;
-      
-      if (token && data.user) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        return { success: true, user: data.user, token };
+      const response = await api.post("/auth/signup", userData);
+      const responseData = response.data;
+
+      // Handle different response formats
+      if (responseData.status === "success") {
+        const token = responseData.token;
+        const user = responseData.data?.user;
+
+        if (token && user) {
+          localStorage.setItem("token", token);
+          localStorage.setItem("user", JSON.stringify(user));
+          return { success: true, user, token };
+        }
       }
-      
-      return { success: false, message: 'Invalid response format' };
+
+      return { success: false, message: "Invalid response format" };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Registration failed',
-        errors: error.response?.data?.errors || []
+        message: error.response?.data?.message || "Registration failed",
+        errors: error.response?.data?.errors || [],
       };
     }
   }
@@ -47,21 +59,21 @@ class AuthService {
   // Logout user
   async logout() {
     try {
-      await api.post('/auth/logout');
+      await api.post("/auth/logout");
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     }
   }
 
   // Verify token
   async verifyToken() {
     try {
-      const response = await api.get('/auth/verify');
+      const response = await api.get("/auth/verify");
       if (response.data.isValid && response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+        localStorage.setItem("user", JSON.stringify(response.data.user));
         return { success: true, user: response.data.user };
       }
       return { success: false };
@@ -73,15 +85,15 @@ class AuthService {
   // Refresh token
   async refreshToken() {
     try {
-      const response = await api.post('/auth/refresh-token');
+      const response = await api.post("/auth/refresh-token");
       const { token, data } = response.data;
-      
+
       if (token && data.user) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         return { success: true, user: data.user, token };
       }
-      
+
       return { success: false };
     } catch (error) {
       return { success: false };
@@ -91,21 +103,21 @@ class AuthService {
   // Update password
   async updatePassword(passwordData) {
     try {
-      const response = await api.patch('/auth/update-password', passwordData);
+      const response = await api.patch("/auth/update-password", passwordData);
       const { token, data } = response.data;
-      
+
       if (token && data.user) {
-        localStorage.setItem('token', token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem("token", token);
+        localStorage.setItem("user", JSON.stringify(data.user));
         return { success: true, user: data.user };
       }
-      
-      return { success: false, message: 'Invalid response format' };
+
+      return { success: false, message: "Invalid response format" };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data?.message || 'Password update failed',
-        errors: error.response?.data?.errors || []
+        message: error.response?.data?.message || "Password update failed",
+        errors: error.response?.data?.errors || [],
       };
     }
   }
@@ -113,7 +125,7 @@ class AuthService {
   // Get current user from localStorage
   getCurrentUser() {
     try {
-      const user = localStorage.getItem('user');
+      const user = localStorage.getItem("user");
       return user ? JSON.parse(user) : null;
     } catch (error) {
       return null;
@@ -122,7 +134,7 @@ class AuthService {
 
   // Get current token from localStorage
   getToken() {
-    return localStorage.getItem('token');
+    return localStorage.getItem("token");
   }
 
   // Check if user is authenticated
@@ -150,27 +162,35 @@ class AuthService {
     if (!user) return false;
 
     const rolePermissions = {
-      managing_director: ['*'], // All permissions
-      it_admin: ['*'], // All permissions
+      managing_director: ["*"], // All permissions
+      it_admin: ["*"], // All permissions
       team_lead: [
-        'view_team_data',
-        'create_project',
-        'assign_tasks',
-        'manage_team_members',
-        'view_own_tasks',
-        'update_task_status',
-        'view_assigned_projects'
+        "view_team_data",
+        "create_project",
+        "assign_tasks",
+        "manage_team_members",
+        "view_own_tasks",
+        "update_task_status",
+        "view_assigned_projects",
       ],
       employee: [
-        'view_own_tasks',
-        'update_task_status',
-        'view_assigned_projects'
-      ]
+        "view_own_tasks",
+        "update_task_status",
+        "view_assigned_projects",
+      ],
     };
 
     const userPermissions = rolePermissions[user.role] || [];
-    return userPermissions.includes('*') || userPermissions.includes(permission);
+    return (
+      userPermissions.includes("*") || userPermissions.includes(permission)
+    );
+  }
+
+  // Set current user in localStorage
+  setCurrentUser(user) {
+    localStorage.setItem("user", JSON.stringify(user));
   }
 }
 
-export default new AuthService();
+const authServiceInstance = new AuthService();
+export default authServiceInstance;

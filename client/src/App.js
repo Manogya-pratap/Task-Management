@@ -1,53 +1,62 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import { AppProvider } from './contexts/AppContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import LoginForm from './components/LoginForm';
-import Layout from './components/Layout';
-import MDDashboard from './components/dashboards/MDDashboard';
-import TeamLeadDashboard from './components/dashboards/TeamLeadDashboard';
-import EmployeeDashboard from './components/dashboards/EmployeeDashboard';
-import TaskBoard from './components/TaskBoard';
-import TaskCalendar from './components/calendar/TaskCalendar';
-import ProjectTimeline from './components/timeline/ProjectTimeline';
-import TeamManagement from './components/management/TeamManagement';
-import UserManagement from './components/management/UserManagement';
-import ProjectManagement from './components/management/ProjectManagement';
-import MyProjects from './components/projects/MyProjects';
-import TeamProjects from './components/projects/TeamProjects';
-import MyTasks from './components/tasks/MyTasks';
-import TeamTasks from './components/tasks/TeamTasks';
-import Reports from './components/reports/Reports';
-import Analytics from './components/analytics/Analytics';
-import Settings from './components/settings/Settings';
-import AuditLogs from './components/audit/AuditLogs';
-import ErrorBoundary, { DashboardErrorBoundary, TaskBoardErrorBoundary } from './components/ErrorBoundary';
-import { PageLoader } from './components/LoadingSpinner';
-import NotificationSystem from './components/NotificationSystem';
-import './App.css';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AppProvider } from "./contexts/AppContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import LoginForm from "./components/LoginForm";
+import Layout from "./components/Layout";
+import MDDashboard from "./components/dashboards/MDDashboard";
+import TeamLeadDashboard from "./components/dashboards/TeamLeadDashboard";
+import EmployeeDashboard from "./components/dashboards/EmployeeDashboard";
+import TaskBoard from "./components/TaskBoard";
+import TaskCalendar from "./components/calendar/TaskCalendar";
+import ProjectTimeline from "./components/timeline/ProjectTimeline";
+import TeamManagement from "./components/management/TeamManagement";
+import UserManagement from "./components/management/UserManagement";
+import ProjectManagement from "./components/management/ProjectManagement";
+import MyProjects from "./components/projects/MyProjects";
+import TeamProjects from "./components/projects/TeamProjects";
+import MyTasks from "./components/tasks/MyTasks";
+import TeamTasks from "./components/tasks/TeamTasks";
+import Reports from "./components/reports/Reports";
+import Analytics from "./components/analytics/Analytics";
+import Settings from "./components/settings/Settings";
+import AuditLogs from "./components/audit/AuditLogs";
+import ErrorBoundary, {
+  DashboardErrorBoundary,
+  TaskBoardErrorBoundary,
+} from "./components/ErrorBoundary";
+import { PageLoader } from "./components/LoadingSpinner";
+import NotificationSystem from "./components/NotificationSystem";
+import "./App.css";
+import "./styles/responsive.css";
 
 const Dashboard = () => {
   const { user } = useAuth();
-  
+
   // Render role-specific dashboard component
   const renderDashboard = () => {
     if (!user) return null;
-    
+
     switch (user.role) {
-      case 'managing_director':
-      case 'it_admin':
+      case "managing_director":
+      case "it_admin":
         return (
           <DashboardErrorBoundary>
             <MDDashboard />
           </DashboardErrorBoundary>
         );
-      case 'team_lead':
+      case "team_lead":
         return (
           <DashboardErrorBoundary>
             <TeamLeadDashboard />
           </DashboardErrorBoundary>
         );
-      case 'employee':
+      case "employee":
         return (
           <DashboardErrorBoundary>
             <EmployeeDashboard />
@@ -61,12 +70,8 @@ const Dashboard = () => {
         ); // Default to employee dashboard
     }
   };
-  
-  return (
-    <Layout>
-      {renderDashboard()}
-    </Layout>
-  );
+
+  return <Layout>{renderDashboard()}</Layout>;
 };
 
 const AppContent = () => {
@@ -78,20 +83,22 @@ const AppContent = () => {
 
   return (
     <Routes>
-      <Route 
-        path="/login" 
-        element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />} 
+      <Route
+        path="/login"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />
+        }
       />
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/tasks" 
+      <Route
+        path="/tasks"
         element={
           <ProtectedRoute>
             <Layout>
@@ -100,10 +107,10 @@ const AppContent = () => {
               </TaskBoardErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/calendar" 
+      <Route
+        path="/calendar"
         element={
           <ProtectedRoute>
             <Layout>
@@ -112,10 +119,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/timeline" 
+      <Route
+        path="/timeline"
         element={
           <ProtectedRoute>
             <Layout>
@@ -124,10 +131,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/teams" 
+      <Route
+        path="/teams"
         element={
           <ProtectedRoute>
             <Layout>
@@ -136,10 +143,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/users" 
+      <Route
+        path="/users"
         element={
           <ProtectedRoute>
             <Layout>
@@ -148,10 +155,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/projects" 
+      <Route
+        path="/projects"
         element={
           <ProtectedRoute>
             <Layout>
@@ -160,10 +167,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/my-projects" 
+      <Route
+        path="/my-projects"
         element={
           <ProtectedRoute>
             <Layout>
@@ -172,10 +179,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/team-projects" 
+      <Route
+        path="/team-projects"
         element={
           <ProtectedRoute>
             <Layout>
@@ -184,10 +191,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/my-tasks" 
+      <Route
+        path="/my-tasks"
         element={
           <ProtectedRoute>
             <Layout>
@@ -196,10 +203,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/team-tasks" 
+      <Route
+        path="/team-tasks"
         element={
           <ProtectedRoute>
             <Layout>
@@ -208,10 +215,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/team-timeline" 
+      <Route
+        path="/team-timeline"
         element={
           <ProtectedRoute>
             <Layout>
@@ -220,10 +227,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/my-timeline" 
+      <Route
+        path="/my-timeline"
         element={
           <ProtectedRoute>
             <Layout>
@@ -232,10 +239,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/team-reports" 
+      <Route
+        path="/team-reports"
         element={
           <ProtectedRoute>
             <Layout>
@@ -244,10 +251,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/reports" 
+      <Route
+        path="/reports"
         element={
           <ProtectedRoute>
             <Layout>
@@ -256,10 +263,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/analytics" 
+      <Route
+        path="/analytics"
         element={
           <ProtectedRoute>
             <Layout>
@@ -268,10 +275,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/settings" 
+      <Route
+        path="/settings"
         element={
           <ProtectedRoute>
             <Layout>
@@ -280,10 +287,10 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/audit" 
+      <Route
+        path="/audit"
         element={
           <ProtectedRoute>
             <Layout>
@@ -292,11 +299,25 @@ const AppContent = () => {
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route 
-        path="/" 
-        element={<Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />} 
+      <Route
+        path="/audit/user/:userId"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <AuditLogs />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/"
+        element={
+          <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+        }
       />
     </Routes>
   );

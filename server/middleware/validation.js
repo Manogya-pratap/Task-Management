@@ -1,81 +1,84 @@
-const { body, param } = require('express-validator');
+const { body, param } = require("express-validator");
 
 /**
  * Validation middleware for authentication endpoints
  */
 
 const validateSignup = [
-  body('username')
+  body("username")
     .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3 and 30 characters')
+    .withMessage("Username must be between 3 and 30 characters")
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
-  body('email')
+    .withMessage("Username can only contain letters, numbers, and underscores"),
+
+  body("email")
     .isEmail()
-    .withMessage('Please provide a valid email')
+    .withMessage("Please provide a valid email")
     .normalizeEmail(),
-  
-  body('password')
+
+  body("password")
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
+    .withMessage("Password must be at least 6 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-  
-  body('firstName')
+    .withMessage(
+      "Password must contain at least one lowercase letter, one uppercase letter, and one number"
+    ),
+
+  body("firstName")
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters')
+    .withMessage("First name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('First name can only contain letters and spaces'),
-  
-  body('lastName')
+    .withMessage("First name can only contain letters and spaces"),
+
+  body("lastName")
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters')
+    .withMessage("Last name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
-  
-  body('role')
+    .withMessage("Last name can only contain letters and spaces"),
+
+  body("role")
     .optional()
-    .isIn(['managing_director', 'it_admin', 'team_lead', 'employee'])
-    .withMessage('Role must be one of: managing_director, it_admin, team_lead, employee'),
-  
-  body('department')
+    .isIn(["managing_director", "it_admin", "team_lead", "employee"])
+    .withMessage(
+      "Role must be one of: managing_director, it_admin, team_lead, employee"
+    ),
+
+  body("department")
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Department must be between 1 and 100 characters')
+    .withMessage("Department must be between 1 and 100 characters"),
 ];
 
 const validateLogin = [
-  body('username')
+  body("username")
     .notEmpty()
-    .withMessage('Username or email is required')
+    .withMessage("Username or email is required")
     .trim(),
-  
-  body('password')
-    .notEmpty()
-    .withMessage('Password is required')
+
+  body("password").notEmpty().withMessage("Password is required"),
 ];
 
 const validatePasswordUpdate = [
-  body('currentPassword')
+  body("currentPassword")
     .notEmpty()
-    .withMessage('Current password is required'),
-  
-  body('newPassword')
+    .withMessage("Current password is required"),
+
+  body("newPassword")
     .isLength({ min: 6 })
-    .withMessage('New password must be at least 6 characters long')
+    .withMessage("New password must be at least 6 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('New password must contain at least one lowercase letter, one uppercase letter, and one number'),
-  
-  body('confirmPassword')
-    .custom((value, { req }) => {
-      if (value !== req.body.newPassword) {
-        throw new Error('Password confirmation does not match new password');
-      }
-      return true;
-    })
+    .withMessage(
+      "New password must contain at least one lowercase letter, one uppercase letter, and one number"
+    ),
+
+  body("confirmPassword").custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error("Password confirmation does not match new password");
+    }
+    return true;
+  }),
 ];
 
 /**
@@ -83,178 +86,188 @@ const validatePasswordUpdate = [
  */
 
 const validateTeamCreation = [
-  body('name')
+  body("name")
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Team name must be between 1 and 100 characters')
+    .withMessage("Team name must be between 1 and 100 characters")
     .matches(/^[a-zA-Z0-9\s\-_]+$/)
-    .withMessage('Team name can only contain letters, numbers, spaces, hyphens, and underscores'),
-  
-  body('department')
+    .withMessage(
+      "Team name can only contain letters, numbers, spaces, hyphens, and underscores"
+    ),
+
+  body("department")
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Department must be between 1 and 100 characters'),
-  
-  body('teamLeadId')
+    .withMessage("Department must be between 1 and 100 characters"),
+
+  body("teamLeadId")
     .isMongoId()
-    .withMessage('Team lead ID must be a valid MongoDB ObjectId'),
-  
-  body('description')
+    .withMessage("Team lead ID must be a valid MongoDB ObjectId"),
+
+  body("description")
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Description cannot exceed 500 characters')
+    .withMessage("Description cannot exceed 500 characters"),
 ];
 
 const validateTeamUpdate = [
-  param('teamId')
+  param("teamId")
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId'),
-  
-  body('name')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+
+  body("name")
     .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Team name must be between 1 and 100 characters')
+    .withMessage("Team name must be between 1 and 100 characters")
     .matches(/^[a-zA-Z0-9\s\-_]+$/)
-    .withMessage('Team name can only contain letters, numbers, spaces, hyphens, and underscores'),
-  
-  body('description')
+    .withMessage(
+      "Team name can only contain letters, numbers, spaces, hyphens, and underscores"
+    ),
+
+  body("description")
     .optional()
     .trim()
     .isLength({ max: 500 })
-    .withMessage('Description cannot exceed 500 characters')
+    .withMessage("Description cannot exceed 500 characters"),
 ];
 
 const validateAddTeamMember = [
-  param('teamId')
+  param("teamId")
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId'),
-  
-  body('userId')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+
+  body("userId")
     .isMongoId()
-    .withMessage('User ID must be a valid MongoDB ObjectId')
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
 ];
 
 const validateRemoveTeamMember = [
-  param('teamId')
+  param("teamId")
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId'),
-  
-  param('userId')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+
+  param("userId")
     .isMongoId()
-    .withMessage('User ID must be a valid MongoDB ObjectId')
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
 ];
 
 const validateUserCreation = [
-  body('username')
+  body("username")
     .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3 and 30 characters')
+    .withMessage("Username must be between 3 and 30 characters")
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
-  body('email')
+    .withMessage("Username can only contain letters, numbers, and underscores"),
+
+  body("email")
     .isEmail()
-    .withMessage('Please provide a valid email')
+    .withMessage("Please provide a valid email")
     .normalizeEmail(),
-  
-  body('password')
+
+  body("password")
     .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
+    .withMessage("Password must be at least 6 characters long")
     .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
-    .withMessage('Password must contain at least one lowercase letter, one uppercase letter, and one number'),
-  
-  body('firstName')
+    .withMessage(
+      "Password must contain at least one lowercase letter, one uppercase letter, and one number"
+    ),
+
+  body("firstName")
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters')
+    .withMessage("First name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('First name can only contain letters and spaces'),
-  
-  body('lastName')
+    .withMessage("First name can only contain letters and spaces"),
+
+  body("lastName")
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters')
+    .withMessage("Last name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
-  
-  body('role')
+    .withMessage("Last name can only contain letters and spaces"),
+
+  body("role")
     .optional()
-    .isIn(['managing_director', 'it_admin', 'team_lead', 'employee'])
-    .withMessage('Role must be one of: managing_director, it_admin, team_lead, employee'),
-  
-  body('department')
+    .isIn(["managing_director", "it_admin", "team_lead", "employee"])
+    .withMessage(
+      "Role must be one of: managing_director, it_admin, team_lead, employee"
+    ),
+
+  body("department")
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Department must be between 1 and 100 characters'),
-  
-  body('teamId')
+    .withMessage("Department must be between 1 and 100 characters"),
+
+  body("teamId")
     .optional()
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
 ];
 
 const validateUserUpdate = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('User ID must be a valid MongoDB ObjectId'),
-  
-  body('username')
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
+
+  body("username")
     .optional()
     .isLength({ min: 3, max: 30 })
-    .withMessage('Username must be between 3 and 30 characters')
+    .withMessage("Username must be between 3 and 30 characters")
     .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage('Username can only contain letters, numbers, and underscores'),
-  
-  body('email')
+    .withMessage("Username can only contain letters, numbers, and underscores"),
+
+  body("email")
     .optional()
     .isEmail()
-    .withMessage('Please provide a valid email')
+    .withMessage("Please provide a valid email")
     .normalizeEmail(),
-  
-  body('firstName')
+
+  body("firstName")
     .optional()
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('First name must be between 1 and 50 characters')
+    .withMessage("First name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('First name can only contain letters and spaces'),
-  
-  body('lastName')
+    .withMessage("First name can only contain letters and spaces"),
+
+  body("lastName")
     .optional()
     .trim()
     .isLength({ min: 1, max: 50 })
-    .withMessage('Last name must be between 1 and 50 characters')
+    .withMessage("Last name must be between 1 and 50 characters")
     .matches(/^[a-zA-Z\s]+$/)
-    .withMessage('Last name can only contain letters and spaces'),
-  
-  body('role')
+    .withMessage("Last name can only contain letters and spaces"),
+
+  body("role")
     .optional()
-    .isIn(['managing_director', 'it_admin', 'team_lead', 'employee'])
-    .withMessage('Role must be one of: managing_director, it_admin, team_lead, employee'),
-  
-  body('department')
+    .isIn(["managing_director", "it_admin", "team_lead", "employee"])
+    .withMessage(
+      "Role must be one of: managing_director, it_admin, team_lead, employee"
+    ),
+
+  body("department")
     .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Department must be between 1 and 100 characters'),
-  
-  body('teamId')
+    .withMessage("Department must be between 1 and 100 characters"),
+
+  body("teamId")
     .optional()
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId'),
-  
-  body('isActive')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+
+  body("isActive")
     .optional()
     .isBoolean()
-    .withMessage('isActive must be a boolean value')
+    .withMessage("isActive must be a boolean value"),
 ];
 
 const validateDepartmentParam = [
-  param('department')
+  param("department")
     .trim()
     .isLength({ min: 1, max: 100 })
-    .withMessage('Department must be between 1 and 100 characters')
+    .withMessage("Department must be between 1 and 100 characters"),
 ];
 
 /**
@@ -262,159 +275,161 @@ const validateDepartmentParam = [
  */
 
 const validateProjectCreation = [
-  body('name')
+  body("name")
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Project name must be between 1 and 200 characters'),
-  
-  body('description')
+    .withMessage("Project name must be between 1 and 200 characters"),
+
+  body("description")
     .trim()
     .isLength({ min: 1, max: 1000 })
-    .withMessage('Project description must be between 1 and 1000 characters'),
-  
-  body('startDate')
+    .withMessage("Project description must be between 1 and 1000 characters"),
+
+  body("startDate")
     .isISO8601()
-    .withMessage('Start date must be a valid date')
+    .withMessage("Start date must be a valid date")
     .toDate(),
-  
-  body('endDate')
+
+  body("endDate")
     .isISO8601()
-    .withMessage('End date must be a valid date')
+    .withMessage("End date must be a valid date")
     .toDate()
     .custom((value, { req }) => {
       if (value <= req.body.startDate) {
-        throw new Error('End date must be after start date');
+        throw new Error("End date must be after start date");
       }
       return true;
     }),
-  
-  body('teamId')
+
+  body("teamId")
+    .optional()
     .isMongoId()
-    .withMessage('Team ID must be a valid MongoDB ObjectId'),
-  
-  body('assignedMembers')
+    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+
+  body("assignedMembers")
     .optional()
     .isArray()
-    .withMessage('Assigned members must be an array')
+    .withMessage("Assigned members must be an array")
     .custom((value) => {
       if (value && value.length > 0) {
-        const isValidIds = value.every(id => /^[0-9a-fA-F]{24}$/.test(id));
+        const isValidIds = value.every((id) => /^[0-9a-fA-F]{24}$/.test(id));
         if (!isValidIds) {
-          throw new Error('All assigned member IDs must be valid MongoDB ObjectIds');
+          throw new Error(
+            "All assigned member IDs must be valid MongoDB ObjectIds"
+          );
         }
       }
       return true;
     }),
-  
-  body('priority')
+
+  body("priority")
     .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Priority must be one of: low, medium, high, urgent'),
-  
-  body('budget')
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Priority must be one of: low, medium, high, urgent"),
+
+  body("budget")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Budget must be a positive number'),
-  
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array')
+    .withMessage("Budget must be a positive number"),
+
+  body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 
 const validateProjectUpdate = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Project ID must be a valid MongoDB ObjectId'),
-  
-  body('name')
+    .withMessage("Project ID must be a valid MongoDB ObjectId"),
+
+  body("name")
     .optional()
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Project name must be between 1 and 200 characters'),
-  
-  body('description')
+    .withMessage("Project name must be between 1 and 200 characters"),
+
+  body("description")
     .optional()
     .trim()
     .isLength({ min: 1, max: 1000 })
-    .withMessage('Project description must be between 1 and 1000 characters'),
-  
-  body('startDate')
+    .withMessage("Project description must be between 1 and 1000 characters"),
+
+  body("startDate")
     .optional()
     .isISO8601()
-    .withMessage('Start date must be a valid date')
+    .withMessage("Start date must be a valid date")
     .toDate(),
-  
-  body('endDate')
+
+  body("endDate")
     .optional()
     .isISO8601()
-    .withMessage('End date must be a valid date')
+    .withMessage("End date must be a valid date")
     .toDate()
     .custom((value, { req }) => {
       if (value && req.body.startDate && value <= req.body.startDate) {
-        throw new Error('End date must be after start date');
+        throw new Error("End date must be after start date");
       }
       return true;
     }),
-  
-  body('status')
+
+  body("status")
     .optional()
-    .isIn(['planning', 'active', 'completed', 'on_hold'])
-    .withMessage('Status must be one of: planning, active, completed, on_hold'),
-  
-  body('priority')
+    .isIn(["planning", "active", "completed", "on_hold"])
+    .withMessage("Status must be one of: planning, active, completed, on_hold"),
+
+  body("priority")
     .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Priority must be one of: low, medium, high, urgent'),
-  
-  body('assignedMembers')
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Priority must be one of: low, medium, high, urgent"),
+
+  body("assignedMembers")
     .optional()
     .isArray()
-    .withMessage('Assigned members must be an array')
+    .withMessage("Assigned members must be an array")
     .custom((value) => {
       if (value && value.length > 0) {
-        const isValidIds = value.every(id => /^[0-9a-fA-F]{24}$/.test(id));
+        const isValidIds = value.every((id) => /^[0-9a-fA-F]{24}$/.test(id));
         if (!isValidIds) {
-          throw new Error('All assigned member IDs must be valid MongoDB ObjectIds');
+          throw new Error(
+            "All assigned member IDs must be valid MongoDB ObjectIds"
+          );
         }
       }
       return true;
     }),
-  
-  body('budget')
+
+  body("budget")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Budget must be a positive number'),
-  
-  body('actualCost')
+    .withMessage("Budget must be a positive number"),
+
+  body("actualCost")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Actual cost must be a positive number'),
-  
-  body('completionPercentage')
+    .withMessage("Actual cost must be a positive number"),
+
+  body("completionPercentage")
     .optional()
     .isInt({ min: 0, max: 100 })
-    .withMessage('Completion percentage must be between 0 and 100')
+    .withMessage("Completion percentage must be between 0 and 100"),
 ];
 
 const validateAddProjectMember = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Project ID must be a valid MongoDB ObjectId'),
-  
-  body('userId')
+    .withMessage("Project ID must be a valid MongoDB ObjectId"),
+
+  body("userId")
     .isMongoId()
-    .withMessage('User ID must be a valid MongoDB ObjectId')
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
 ];
 
 const validateRemoveProjectMember = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Project ID must be a valid MongoDB ObjectId'),
-  
-  param('userId')
+    .withMessage("Project ID must be a valid MongoDB ObjectId"),
+
+  param("userId")
     .isMongoId()
-    .withMessage('User ID must be a valid MongoDB ObjectId')
+    .withMessage("User ID must be a valid MongoDB ObjectId"),
 ];
 
 /**
@@ -422,138 +437,138 @@ const validateRemoveProjectMember = [
  */
 
 const validateTaskCreation = [
-  body('title')
+  body("title")
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Task title must be between 1 and 200 characters'),
-  
-  body('description')
+    .withMessage("Task title must be between 1 and 200 characters"),
+
+  body("description")
     .optional()
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Task description cannot exceed 1000 characters'),
-  
-  body('status')
+    .withMessage("Task description cannot exceed 1000 characters"),
+
+  body("status")
     .optional()
-    .isIn(['new', 'scheduled', 'in_progress', 'completed'])
-    .withMessage('Status must be one of: new, scheduled, in_progress, completed'),
-  
-  body('priority')
+    .isIn(["new", "scheduled", "in_progress", "completed"])
+    .withMessage(
+      "Status must be one of: new, scheduled, in_progress, completed"
+    ),
+
+  body("priority")
     .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Priority must be one of: low, medium, high, urgent'),
-  
-  body('projectId')
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Priority must be one of: low, medium, high, urgent"),
+
+  body("projectId")
     .isMongoId()
-    .withMessage('Project ID must be a valid MongoDB ObjectId'),
-  
-  body('assignedTo')
+    .withMessage("Project ID must be a valid MongoDB ObjectId"),
+
+  body("assignedTo")
     .optional()
     .isMongoId()
-    .withMessage('Assigned user ID must be a valid MongoDB ObjectId'),
-  
-  body('scheduledDate')
+    .withMessage("Assigned user ID must be a valid MongoDB ObjectId"),
+
+  body("scheduledDate")
     .optional()
     .isISO8601()
-    .withMessage('Scheduled date must be a valid date')
+    .withMessage("Scheduled date must be a valid date")
     .toDate(),
-  
-  body('dueDate')
+
+  body("dueDate")
     .optional()
     .isISO8601()
-    .withMessage('Due date must be a valid date')
+    .withMessage("Due date must be a valid date")
     .toDate(),
-  
-  body('estimatedHours')
+
+  body("estimatedHours")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Estimated hours must be a positive number'),
-  
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array')
+    .withMessage("Estimated hours must be a positive number"),
+
+  body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 
 const validateTaskUpdate = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Task ID must be a valid MongoDB ObjectId'),
-  
-  body('title')
+    .withMessage("Task ID must be a valid MongoDB ObjectId"),
+
+  body("title")
     .optional()
     .trim()
     .isLength({ min: 1, max: 200 })
-    .withMessage('Task title must be between 1 and 200 characters'),
-  
-  body('description')
+    .withMessage("Task title must be between 1 and 200 characters"),
+
+  body("description")
     .optional()
     .trim()
     .isLength({ max: 1000 })
-    .withMessage('Task description cannot exceed 1000 characters'),
-  
-  body('status')
+    .withMessage("Task description cannot exceed 1000 characters"),
+
+  body("status")
     .optional()
-    .isIn(['new', 'scheduled', 'in_progress', 'completed'])
-    .withMessage('Status must be one of: new, scheduled, in_progress, completed'),
-  
-  body('priority')
+    .isIn(["new", "scheduled", "in_progress", "completed"])
+    .withMessage(
+      "Status must be one of: new, scheduled, in_progress, completed"
+    ),
+
+  body("priority")
     .optional()
-    .isIn(['low', 'medium', 'high', 'urgent'])
-    .withMessage('Priority must be one of: low, medium, high, urgent'),
-  
-  body('assignedTo')
+    .isIn(["low", "medium", "high", "urgent"])
+    .withMessage("Priority must be one of: low, medium, high, urgent"),
+
+  body("assignedTo")
     .optional()
     .isMongoId()
-    .withMessage('Assigned user ID must be a valid MongoDB ObjectId'),
-  
-  body('scheduledDate')
+    .withMessage("Assigned user ID must be a valid MongoDB ObjectId"),
+
+  body("scheduledDate")
     .optional()
     .isISO8601()
-    .withMessage('Scheduled date must be a valid date')
+    .withMessage("Scheduled date must be a valid date")
     .toDate(),
-  
-  body('dueDate')
+
+  body("dueDate")
     .optional()
     .isISO8601()
-    .withMessage('Due date must be a valid date')
+    .withMessage("Due date must be a valid date")
     .toDate(),
-  
-  body('estimatedHours')
+
+  body("estimatedHours")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Estimated hours must be a positive number'),
-  
-  body('actualHours')
+    .withMessage("Estimated hours must be a positive number"),
+
+  body("actualHours")
     .optional()
     .isNumeric({ min: 0 })
-    .withMessage('Actual hours must be a positive number'),
-  
-  body('tags')
-    .optional()
-    .isArray()
-    .withMessage('Tags must be an array')
+    .withMessage("Actual hours must be a positive number"),
+
+  body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 
 const validateTaskStatusUpdate = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Task ID must be a valid MongoDB ObjectId'),
-  
-  body('status')
-    .isIn(['new', 'scheduled', 'in_progress', 'completed'])
-    .withMessage('Status must be one of: new, scheduled, in_progress, completed')
+    .withMessage("Task ID must be a valid MongoDB ObjectId"),
+
+  body("status")
+    .isIn(["new", "scheduled", "in_progress", "completed"])
+    .withMessage(
+      "Status must be one of: new, scheduled, in_progress, completed"
+    ),
 ];
 
 const validateTaskComment = [
-  param('id')
+  param("id")
     .isMongoId()
-    .withMessage('Task ID must be a valid MongoDB ObjectId'),
-  
-  body('content')
+    .withMessage("Task ID must be a valid MongoDB ObjectId"),
+
+  body("content")
     .trim()
     .isLength({ min: 1, max: 500 })
-    .withMessage('Comment content must be between 1 and 500 characters')
+    .withMessage("Comment content must be between 1 and 500 characters"),
 ];
 
 module.exports = {
@@ -574,5 +589,5 @@ module.exports = {
   validateTaskCreation,
   validateTaskUpdate,
   validateTaskStatusUpdate,
-  validateTaskComment
+  validateTaskComment,
 };
