@@ -51,11 +51,7 @@ const TaskColumn = ({
   };
 
   return (
-    <div
-      ref={drop}
-      className={getColumnClasses()}
-      style={{ minHeight: "400px" }}
-    >
+    <div ref={drop} className={getColumnClasses()}>
       <div className="card h-100 border-0 shadow-sm">
         {/* Column Header */}
         <div
@@ -73,10 +69,7 @@ const TaskColumn = ({
         </div>
 
         {/* Column Body */}
-        <div
-          className="card-body p-2 p-md-3"
-          style={{ maxHeight: "500px", overflowY: "auto", minHeight: "300px" }}
-        >
+        <div className="card-body p-2 p-md-3">
           {tasks.length === 0 ? (
             <div className="text-center py-4">
               <div className="text-muted">
@@ -93,7 +86,7 @@ const TaskColumn = ({
               )}
             </div>
           ) : (
-            <div className="task-list d-grid gap-2">
+            <div className="task-list">
               {tasks.map((task, index) => (
                 <TaskCard
                   key={task._id}
@@ -102,7 +95,7 @@ const TaskColumn = ({
                   onDragEnd={onDragEnd}
                   isDragging={draggedTask && draggedTask._id === task._id}
                   onClick={onTaskClick ? () => onTaskClick(task) : null}
-                  className="mb-2 task-card-item"
+                  className="task-card-item"
                 />
               ))}
             </div>

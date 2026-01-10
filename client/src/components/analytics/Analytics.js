@@ -12,24 +12,6 @@ const Analytics = () => {
     trends: {},
   });
 
-  const fetchAnalytics = useCallback(async () => {
-    setLoading(true);
-    try {
-      const response = await api.get("/analytics/dashboard");
-      setAnalytics(response.data.data);
-    } catch (error) {
-      console.error("Error fetching analytics:", error);
-      // Fallback to calculated analytics from existing data
-      calculateAnalytics();
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setAnalytics, calculateAnalytics]);
-
-  useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
-
   const calculateAnalytics = () => {
     const totalProjects = projects.length;
     const activeProjects = projects.filter((p) => p.status === "active").length;
@@ -77,6 +59,24 @@ const Analytics = () => {
       },
     });
   };
+
+  const fetchAnalytics = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await api.get("/analytics/dashboard");
+      setAnalytics(response.data.data);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      // Fallback to calculated analytics from existing data
+      calculateAnalytics();
+    } finally {
+      setLoading(false);
+    }
+  }, [setLoading, setAnalytics]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (

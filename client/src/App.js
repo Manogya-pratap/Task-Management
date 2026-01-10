@@ -22,6 +22,7 @@ import MyProjects from "./components/projects/MyProjects";
 import TeamProjects from "./components/projects/TeamProjects";
 import MyTasks from "./components/tasks/MyTasks";
 import TeamTasks from "./components/tasks/TeamTasks";
+import MyTeam from "./components/teams/MyTeam";
 import Reports from "./components/reports/Reports";
 import Analytics from "./components/analytics/Analytics";
 import Settings from "./components/settings/Settings";
@@ -122,6 +123,18 @@ const AppContent = () => {
         }
       />
       <Route
+        path="/team-calendar"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <TaskCalendar />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/timeline"
         element={
           <ProtectedRoute>
@@ -140,6 +153,18 @@ const AppContent = () => {
             <Layout>
               <ErrorBoundary>
                 <TeamManagement />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/my-team"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <MyTeam />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>

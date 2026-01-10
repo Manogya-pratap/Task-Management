@@ -818,3 +818,34 @@
 .skip-link:focus {
   top: 0;
 }
+
+/* Dashboard fade-in animation */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prevent blinking during data loading */
+.team-lead-dashboard {
+  min-height: 100vh;
+}
+
+/* Smooth transitions for dashboard components */
+.team-lead-dashboard .card {
+  transition: all 0.3s ease;
+}
+
+.team-lead-dashboard .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}

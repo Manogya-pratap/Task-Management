@@ -175,6 +175,13 @@ const Layout = ({ children }) => {
               href: "/my-team",
               description: "Manage team members",
             },
+            {
+              label: "Create Employee",
+              icon: "fas fa-user-plus",
+              href: "/dashboard#create-employee",
+              description: "Create new employee ID",
+              special: true,
+            },
           ],
         },
         {
@@ -408,49 +415,95 @@ const Layout = ({ children }) => {
                   <li key={itemIndex}>
                     <button
                       onClick={() => {
-                        console.log(
-                          "Timeline clicked, navigating to:",
-                          item.href
-                        );
-                        console.log("Current path:", location.pathname);
-                        console.log(
-                          "Will be active:",
-                          location.pathname === item.href
-                        );
-                        navigate(item.href);
+                        if (
+                          item.special &&
+                          item.href.includes("#create-employee")
+                        ) {
+                          // Special handling for Create Employee button
+                          navigate("/dashboard");
+                          // Trigger the create employee modal after navigation
+                          setTimeout(() => {
+                            const event = new CustomEvent(
+                              "openCreateEmployeeModal"
+                            );
+                            window.dispatchEvent(event);
+                          }, 100);
+                        } else {
+                          console.log(
+                            "Sidebar item clicked, navigating to:",
+                            item.href
+                          );
+                          console.log("Current path:", location.pathname);
+                          console.log(
+                            "Will be active:",
+                            location.pathname === item.href
+                          );
+                          navigate(item.href);
+                        }
                       }}
                       className={`sidebar-link d-flex align-items-center p-3 text-decoration-none w-100 border-0 text-start ${
                         location.pathname === item.href ? "active" : ""
-                      }`}
+                      } ${item.special ? "create-employee-btn" : ""}`}
                       style={{
                         background:
                           location.pathname === item.href
                             ? "rgba(255,255,255,0.1)"
-                            : "transparent",
+                            : item.special
+                              ? "linear-gradient(135deg, #007bff 0%, #0056b3 100%)"
+                              : "transparent",
                         color: "white",
                         transition: "all 0.3s ease",
                         fontSize: "14px",
                         fontWeight:
-                          location.pathname === item.href ? "600" : "500",
+                          location.pathname === item.href
+                            ? "600"
+                            : item.special
+                              ? "600"
+                              : "500",
                         textShadow: "0 1px 2px rgba(0,0,0,0.1)",
                         borderLeft:
                           location.pathname === item.href
                             ? "2px solid rgba(255,255,255,0.6)"
-                            : "none",
+                            : item.special
+                              ? "2px solid #007bff"
+                              : "none",
                         borderRadius:
-                          location.pathname === item.href ? "0 4px 4px 0" : "0",
+                          location.pathname === item.href
+                            ? "0 4px 4px 0"
+                            : item.special
+                              ? "4px"
+                              : "0",
+                        boxShadow: item.special
+                          ? "0 2px 8px rgba(0,123,255,0.3)"
+                          : "none",
                       }}
                       title={sidebarCollapsed ? item.label : item.description}
                       onMouseEnter={(e) => {
                         if (location.pathname !== item.href) {
-                          e.target.style.background = "rgba(255,255,255,0.1)";
-                          e.target.style.transform = "translateX(4px)";
+                          if (item.special) {
+                            e.target.style.background =
+                              "linear-gradient(135deg, #0056b3 0%, #004085 100%)";
+                            e.target.style.transform = "translateX(4px)";
+                            e.target.style.boxShadow =
+                              "0 4px 12px rgba(0,123,255,0.4)";
+                          } else {
+                            e.target.style.background = "rgba(255,255,255,0.1)";
+                            e.target.style.transform = "translateX(4px)";
+                          }
                         }
                       }}
                       onMouseLeave={(e) => {
                         if (location.pathname !== item.href) {
-                          e.target.style.background = "transparent";
-                          e.target.style.transform = "translateX(0)";
+                          if (item.special) {
+                            e.target.style.background =
+                              "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
+                            e.target.style.transform = "translateX(0)";
+                            e.target.style.boxShadow =
+                              "0 2px 8px rgba(0,123,255,0.3)";
+                          } else {
+                            e.target.style.background = "transparent";
+                            e.target.style.transform = "translateX(0)";
+                          }
                         }
                       }}
                     >

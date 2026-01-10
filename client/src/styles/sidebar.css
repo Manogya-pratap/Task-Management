@@ -49,6 +49,41 @@
   text-overflow: ellipsis;
 }
 
+/* Special styling for Create Employee button */
+.sidebar-link.create-employee-btn {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.sidebar-link.create-employee-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s ease;
+}
+
+.sidebar-link.create-employee-btn:hover::before {
+  left: 100%;
+}
+
+.sidebar-link.create-employee-btn:hover {
+  background: linear-gradient(135deg, #0056b3 0%, #004085 100%) !important;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4) !important;
+  transform: translateX(4px) !important;
+}
+
 .sidebar-link:hover {
   transform: translateX(4px);
   background: rgba(255, 255, 255, 0.1) !important;

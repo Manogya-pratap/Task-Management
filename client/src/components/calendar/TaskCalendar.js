@@ -47,8 +47,11 @@ const TaskCalendar = ({
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks, projectId]);
+    // Only fetch tasks if they're not already loaded
+    if (!allTasks || allTasks.length === 0) {
+      fetchTasks();
+    }
+  }, [projectId, allTasks?.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter tasks for calendar display
   const tasks = useMemo(() => {
@@ -85,62 +88,27 @@ const TaskCalendar = ({
     return days;
   }, [currentDate]);
 
-  // Get tasks for a specific date
-  const getTasksForDate = (date) => {
-    if (!Array.isArray(tasks)) return [];
+  // Get tasks for a specific date (memoized for performance)
+  const getTasksForDate = useMemo(() => {
+    return (date) => {
+      if (!Array.isArray(tasks)) return [];
 
-    const dateStr = date.format("YYYY-MM-DD");
-    const is9th = date.date() === 9;
+      const dateStr = date.format("YYYY-MM-DD");
 
-    if (is9th) {
-      console.log(`🔍 SPECIAL DEBUG for 9th date: ${dateStr}`);
-      console.log(
-        "All available tasks:",
-        tasks.map((t) => ({
-          title: t.title,
-          scheduledDate: t.scheduledDate,
-          dueDate: t.dueDate,
-          startDate: t.startDate,
-        }))
-      );
-    }
+      const filteredTasks = tasks.filter((task) => {
+        const taskDate = task.scheduledDate || task.dueDate || task.startDate;
+        if (!taskDate) return false;
+        const taskMoment = moment(taskDate);
+        return taskMoment.isSame(date, "day");
+      });
 
-    const filteredTasks = tasks.filter((task) => {
-      const taskDate = task.scheduledDate || task.dueDate || task.startDate;
-      if (!taskDate) return false;
-      const taskMoment = moment(taskDate);
-      const isSame = taskMoment.isSame(date, "day");
+      return filteredTasks;
+    };
+  }, [tasks]);
 
-      if (is9th) {
-        console.log(`🔍 9th date check for task "${task.title}":`, {
-          taskDate,
-          taskMoment: taskMoment.format("YYYY-MM-DD"),
-          calendarDate: date.format("YYYY-MM-DD"),
-          isSame,
-          taskDateType: task.scheduledDate
-            ? "scheduled"
-            : task.dueDate
-              ? "due"
-              : "start",
-        });
-      }
-
-      return isSame;
-    });
-
-    console.log(`Getting tasks for ${dateStr}:`, {
-      totalTasks: tasks.length,
-      filteredTasks: filteredTasks.length,
-      sampleTask: filteredTasks[0],
-      is9th,
-    });
-
-    return filteredTasks;
-  };
-
-  // Get deadline notifications (tasks due within next 7 days)
-  const getDeadlineNotifications = () => {
-    if (!Array.isArray(tasks)) return [];
+  // Get deadline notifications (tasks due within next 7 days) - memoized
+  const deadlineNotifications = useMemo(() => {
+    if (!Array.isArray(tasks) || !showDeadlineNotifications) return [];
 
     const today = moment();
     const nextWeek = today.clone().add(7, "days");
@@ -156,39 +124,43 @@ const TaskCalendar = ({
         return taskDue.isBetween(today, nextWeek, "day", "[]");
       })
       .sort((a, b) => moment(a.dueDate) - moment(b.dueDate));
-  };
+  }, [tasks, showDeadlineNotifications]);
 
-  // Check if a date has overdue tasks
-  const hasOverdueTasks = (date) => {
-    if (!Array.isArray(tasks)) return false;
+  // Check if a date has overdue tasks - memoized
+  const hasOverdueTasks = useMemo(() => {
+    return (date) => {
+      if (!Array.isArray(tasks)) return false;
 
-    const today = moment();
-    if (date.isAfter(today, "day")) return false;
+      const today = moment();
+      if (date.isAfter(today, "day")) return false;
 
-    return tasks.some((task) => {
-      if (task.status === "completed") return false;
-      const dueDate = task.dueDate;
-      return (
-        dueDate &&
-        moment(dueDate).isSame(date, "day") &&
-        moment(dueDate).isBefore(today, "day")
-      );
-    });
-  };
+      return tasks.some((task) => {
+        if (task.status === "completed") return false;
+        const dueDate = task.dueDate;
+        return (
+          dueDate &&
+          moment(dueDate).isSame(date, "day") &&
+          moment(dueDate).isBefore(today, "day")
+        );
+      });
+    };
+  }, [tasks]);
 
-  // Check if a date has tasks due today
-  const hasTasksDueToday = (date) => {
-    if (!Array.isArray(tasks)) return false;
+  // Check if a date has tasks due today - memoized
+  const hasTasksDueToday = useMemo(() => {
+    return (date) => {
+      if (!Array.isArray(tasks)) return false;
 
-    const today = moment();
-    if (!date.isSame(today, "day")) return false;
+      const today = moment();
+      if (!date.isSame(today, "day")) return false;
 
-    return tasks.some((task) => {
-      if (task.status === "completed") return false;
-      const dueDate = task.dueDate;
-      return dueDate && moment(dueDate).isSame(date, "day");
-    });
-  };
+      return tasks.some((task) => {
+        if (task.status === "completed") return false;
+        const dueDate = task.dueDate;
+        return dueDate && moment(dueDate).isSame(date, "day");
+      });
+    };
+  }, [tasks]);
 
   const handleTaskClick = (task) => {
     setSelectedTask(task);
@@ -320,10 +292,6 @@ const TaskCalendar = ({
   const goToToday = () => {
     setCurrentDate(moment());
   };
-
-  const deadlineNotifications = showDeadlineNotifications
-    ? getDeadlineNotifications()
-    : [];
 
   return (
     <div className="task-calendar">

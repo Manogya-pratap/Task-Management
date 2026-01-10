@@ -4,6 +4,7 @@ import React, {
   useReducer,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 import api from "../services/api";
@@ -323,20 +324,28 @@ export const AppProvider = ({ children }) => {
   // Cache duration (5 minutes)
   const CACHE_DURATION = 5 * 60 * 1000;
 
+  // Use refs to track last fetch times without causing re-renders
+  const lastFetchRef = useRef({});
+  const tasksLastFetchRef = useRef(null);
+
   // Check if data needs refresh
   const needsRefresh = useCallback(
     (key) => {
-      const lastFetch = state.lastFetch[key];
-      return !lastFetch || Date.now() - lastFetch.getTime() > CACHE_DURATION;
+      const lastFetch = lastFetchRef.current[key];
+      return !lastFetch || Date.now() - lastFetch > CACHE_DURATION;
     },
-    [state.lastFetch, CACHE_DURATION]
+    [CACHE_DURATION]
   );
 
   // Fetch projects
   const fetchProjects = useCallback(
     async (force = false) => {
-      if (!force && !needsRefresh("projects") && state.projects.length > 0) {
-        return;
+      if (!force && state.projects.length > 0) {
+        // Only fetch if it's been more than 5 minutes since last fetch
+        const lastFetch = state.lastFetch.projects;
+        if (lastFetch && Date.now() - lastFetch.getTime() < CACHE_DURATION) {
+          return;
+        }
       }
 
       try {
@@ -346,19 +355,17 @@ export const AppProvider = ({ children }) => {
         });
 
         let response;
+        const params = {};
 
         // Use role-specific endpoint for employees
         if (user?.role === "employee") {
           console.log("AppContext: Using /projects/my endpoint for employee");
-          response = await api.get("/projects/my");
-        } else if (user?.role === "team_lead") {
-          console.log(
-            "AppContext: Using /projects/team endpoint for team lead"
-          );
-          response = await api.get("/projects/team");
+          response = await api.get("/projects/my", { params });
         } else {
-          console.log("AppContext: Using /projects endpoint for admin");
-          response = await api.get("/projects");
+          console.log(
+            "AppContext: Using /projects endpoint for admin/team lead"
+          );
+          response = await api.get("/projects", { params });
         }
 
         const projects =
@@ -389,17 +396,17 @@ export const AppProvider = ({ children }) => {
         });
       }
     },
-    [state.projects.length, needsRefresh, user?.role]
+    [user?.role]
   );
+
   const fetchTasks = useCallback(
     async (force = false, projectId = null) => {
-      if (
-        !force &&
-        !needsRefresh("tasks") &&
-        state.tasks.length > 0 &&
-        !projectId
-      ) {
-        return;
+      if (!force && state.tasks.length > 0 && !projectId) {
+        // Only fetch if it's been more than 5 minutes since last fetch
+        const lastFetch = tasksLastFetchRef.current;
+        if (lastFetch && Date.now() - lastFetch < CACHE_DURATION) {
+          return;
+        }
       }
 
       try {
@@ -428,6 +435,9 @@ export const AppProvider = ({ children }) => {
           user?.role
         );
 
+        // Update the ref with current timestamp
+        tasksLastFetchRef.current = Date.now();
+
         dispatch({
           type: APP_ACTIONS.SET_TASKS,
           payload: tasks,
@@ -447,7 +457,7 @@ export const AppProvider = ({ children }) => {
         });
       }
     },
-    [state.tasks.length, needsRefresh, user?.role]
+    [user?.role]
   );
 
   // Fetch teams
@@ -477,7 +487,7 @@ export const AppProvider = ({ children }) => {
         });
       }
     },
-    [state.teams.length, needsRefresh]
+    [needsRefresh]
   );
 
   // Fetch users (admin only)
@@ -511,7 +521,7 @@ export const AppProvider = ({ children }) => {
         });
       }
     },
-    [user, state.users.length, needsRefresh]
+    [user, needsRefresh]
   );
 
   // Fetch all data
@@ -533,7 +543,7 @@ export const AppProvider = ({ children }) => {
         console.error("AppContext: fetchAllData failed:", error);
       }
     },
-    [isAuthenticated, fetchProjects, fetchTasks, fetchTeams, fetchUsers]
+    [isAuthenticated] // Only depend on authentication status
   );
 
   // Auto-fetch data when authenticated (only once)

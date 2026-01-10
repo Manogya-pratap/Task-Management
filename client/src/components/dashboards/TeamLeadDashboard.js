@@ -1,19 +1,252 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
+import api from "../../services/api";
 import TaskCalendar from "../calendar/TaskCalendar";
 import TaskBoard from "../TaskBoard";
 import { ComponentLoader } from "../LoadingSpinner";
+import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
 
 const TeamLeadDashboard = () => {
   const { user, getUserFullName } = useAuth();
   const { projects, tasks, teams, users, loading, errors, fetchAllData } =
     useApp();
 
+  // Coordinated loading state
+  const [isDashboardReady, setIsDashboardReady] = useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+
+  // Add Member Modal state
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState("");
+  const [addMemberLoading, setAddMemberLoading] = useState(false);
+  const [addMemberError, setAddMemberError] = useState("");
+  const [addMemberSuccess, setAddMemberSuccess] = useState("");
+
+  // Create Employee Modal state
+  const [showCreateEmployeeModal, setShowCreateEmployeeModal] = useState(false);
+  const [createEmployeeData, setCreateEmployeeData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    username: "",
+    password: "",
+    department: "",
+    phone: "",
+    role: "employee",
+  });
+  const [createEmployeeLoading, setCreateEmployeeLoading] = useState(false);
+  const [createEmployeeError, setCreateEmployeeError] = useState("");
+  const [createEmployeeSuccess, setCreateEmployeeSuccess] = useState("");
+
   useEffect(() => {
-    // Fetch all data when component mounts
-    fetchAllData(true); // Force refresh for dashboard
-  }, [fetchAllData]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Fetch all data when component mounts (without force to respect caching)
+    fetchAllData();
+
+    // Safety timeout - show dashboard after 10 seconds even if still loading
+    const timeoutId = setTimeout(() => {
+      console.log(
+        "TeamLeadDashboard - Loading timeout reached, showing dashboard"
+      );
+      setLoadingTimeout(true);
+    }, 10000);
+
+    // Add event listener for Create Employee modal trigger from sidebar
+    const handleOpenCreateEmployeeModal = () => {
+      handleShowCreateEmployeeModal();
+    };
+
+    window.addEventListener(
+      "openCreateEmployeeModal",
+      handleOpenCreateEmployeeModal
+    );
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener(
+        "openCreateEmployeeModal",
+        handleOpenCreateEmployeeModal
+      );
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Check if all required data is loaded
+  useEffect(() => {
+    const isLoading =
+      loading.global ||
+      loading.projects ||
+      loading.tasks ||
+      loading.teams ||
+      loading.users;
+
+    // Once loaded, don't hide dashboard again for subsequent loads
+    if (!isLoading && !hasLoadedOnce) {
+      setHasLoadedOnce(true);
+      setIsDashboardReady(true);
+    } else if (hasLoadedOnce) {
+      // Keep dashboard visible once it has loaded at least once
+      setIsDashboardReady(true);
+    }
+  }, [loading, hasLoadedOnce]);
+
+  // Get user's team
+  const myTeam = user ? teams.find((team) => team._id === user.teamId) : null;
+  const teamMembers = user ? users.filter((u) => u.teamId === user.teamId) : [];
+
+  // Modal handlers
+  const handleShowAddMemberModal = () => {
+    setShowAddMemberModal(true);
+    setSelectedUserId("");
+    setAddMemberError("");
+    setAddMemberSuccess("");
+  };
+
+  const handleCloseAddMemberModal = () => {
+    setShowAddMemberModal(false);
+    setSelectedUserId("");
+    setAddMemberError("");
+    setAddMemberSuccess("");
+  };
+
+  const handleAddMember = async (e) => {
+    e.preventDefault();
+
+    if (!selectedUserId || !myTeam) {
+      setAddMemberError("Please select a user to add");
+      return;
+    }
+
+    setAddMemberLoading(true);
+    setAddMemberError("");
+    setAddMemberSuccess("");
+
+    try {
+      // Add the new member to the team's assignedMembers array
+      const updatedMembers = [...teamMembers, selectedUserId];
+
+      const response = await api.patch(`/teams/${myTeam._id}`, {
+        assignedMembers: updatedMembers,
+      });
+
+      if (response.data.success) {
+        setAddMemberSuccess("Team member added successfully!");
+
+        // Refresh team data
+        setTimeout(() => {
+          fetchAllData();
+          handleCloseAddMemberModal();
+        }, 1500);
+      } else {
+        setAddMemberError(response.data.message || "Failed to add team member");
+      }
+    } catch (error) {
+      console.error("Error adding team member:", error);
+      setAddMemberError(
+        error.response?.data?.message || "Failed to add team member"
+      );
+    } finally {
+      setAddMemberLoading(false);
+    }
+  };
+
+  // Filter available users (employees not already in team)
+  const availableUsers = user
+    ? users.filter(
+        (u) =>
+          u.role === "employee" &&
+          u.status === "active" &&
+          u.teamId !== user.teamId
+      )
+    : [];
+
+  // Create Employee handlers
+  const handleShowCreateEmployeeModal = () => {
+    setShowCreateEmployeeModal(true);
+    setCreateEmployeeData({
+      firstName: "",
+      lastName: "",
+      email: "",
+      username: "",
+      password: "",
+      department: user?.department || "",
+      phone: "",
+      role: "employee",
+    });
+    setCreateEmployeeError("");
+    setCreateEmployeeSuccess("");
+  };
+
+  const handleCloseCreateEmployeeModal = () => {
+    setShowCreateEmployeeModal(false);
+    setCreateEmployeeError("");
+    setCreateEmployeeSuccess("");
+  };
+
+  const handleCreateEmployeeChange = (e) => {
+    const { name, value } = e.target;
+    setCreateEmployeeData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const handleCreateEmployee = async (e) => {
+    e.preventDefault();
+
+    if (
+      !createEmployeeData.firstName ||
+      !createEmployeeData.lastName ||
+      !createEmployeeData.email
+    ) {
+      setCreateEmployeeError("Please fill in all required fields");
+      return;
+    }
+
+    // Check if user exists and has team assignment
+    if (!user || !user.teamId) {
+      setCreateEmployeeError(
+        user
+          ? "You must be assigned to a team to create employees"
+          : "User data not loaded. Please refresh the page."
+      );
+      return;
+    }
+
+    setCreateEmployeeLoading(true);
+    setCreateEmployeeError("");
+    setCreateEmployeeSuccess("");
+
+    try {
+      const response = await api.post("/users", {
+        ...createEmployeeData,
+        teamId: user.teamId, // Assign to team lead's team
+      });
+
+      if (response.data.success) {
+        setCreateEmployeeSuccess(
+          "Employee created and added to team successfully!"
+        );
+
+        // Refresh data
+        setTimeout(() => {
+          fetchAllData();
+          handleCloseCreateEmployeeModal();
+        }, 1500);
+      } else {
+        setCreateEmployeeError(
+          response.data.message || "Failed to create employee"
+        );
+      }
+    } catch (error) {
+      console.error("Error creating employee:", error);
+      setCreateEmployeeError(
+        error.response?.data?.message || "Failed to create employee"
+      );
+    } finally {
+      setCreateEmployeeLoading(false);
+    }
+  };
 
   const getProjectStatusColor = (status) => {
     const colors = {
@@ -35,10 +268,12 @@ const TeamLeadDashboard = () => {
     return colors[status] || "secondary";
   };
 
-  if (loading.global || loading.projects || loading.tasks || loading.teams) {
+  // Show coordinated loading state until all data is ready
+  if (!isDashboardReady) {
     return <ComponentLoader text="Loading team dashboard..." />;
   }
 
+  // Show error state if there are critical errors
   if (errors.global || errors.projects || errors.tasks || errors.teams) {
     const errorMessage =
       errors.global || errors.projects || errors.tasks || errors.teams;
@@ -54,14 +289,17 @@ const TeamLeadDashboard = () => {
   }
 
   // Filter data for team lead's team
-  const userTeam = teams.find((team) => team._id === user.teamId);
-  const teamMembers = users.filter((u) => u.teamId === user.teamId) || [];
-  const teamProjects = projects.filter((p) => p.teamId === user.teamId);
-  const teamTasks = tasks.filter(
-    (t) =>
-      teamMembers.some((member) => member._id === t.assignedTo?._id) ||
-      teamProjects.some((project) => project._id === t.projectId?._id)
-  );
+  const userTeam = user ? teams.find((team) => team._id === user.teamId) : null;
+  const teamProjects = user
+    ? projects.filter((p) => p.teamId === user.teamId)
+    : [];
+  const teamTasks = user
+    ? tasks.filter(
+        (t) =>
+          teamMembers.some((member) => member._id === t.assignedTo?._id) ||
+          teamProjects.some((project) => project._id === t.projectId?._id)
+      )
+    : [];
 
   // Calculate team metrics
   const totalProjects = teamProjects.length;
@@ -125,7 +363,7 @@ const TeamLeadDashboard = () => {
   });
 
   return (
-    <div className="team-lead-dashboard">
+    <div className={`team-lead-dashboard ${isDashboardReady ? "fade-in" : ""}`}>
       {/* Welcome Header */}
       <div className="row mb-4">
         <div className="col-12">
@@ -144,7 +382,8 @@ const TeamLeadDashboard = () => {
                   </h2>
                   <p className="mb-0 text-white opacity-75">
                     <i className="fas fa-user-tie me-2 text-white"></i>
-                    Team Lead - {user.department} Department Dashboard
+                    Team Lead - {user?.department || "General"} Department
+                    Dashboard
                   </p>
                 </div>
                 <div className="col-md-4 text-md-end">
@@ -472,9 +711,27 @@ const TeamLeadDashboard = () => {
                   <i className="fas fa-users me-2 text-primary"></i>
                   Team Performance
                 </h5>
-                <a href="/my-team" className="btn btn-sm btn-outline-primary">
-                  Manage Team
-                </a>
+                <div className="d-flex gap-2">
+                  <a href="/my-team" className="btn btn-sm btn-outline-primary">
+                    Manage Team
+                  </a>
+                  <Button
+                    variant="success"
+                    size="sm"
+                    onClick={handleShowAddMemberModal}
+                  >
+                    <i className="fas fa-user-plus me-1"></i>
+                    Add Member
+                  </Button>
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    onClick={handleShowCreateEmployeeModal}
+                  >
+                    <i className="fas fa-user-plus me-1"></i>
+                    Create Employee
+                  </Button>
+                </div>
               </div>
             </div>
             <div className="card-body">
@@ -482,6 +739,24 @@ const TeamLeadDashboard = () => {
                 <div className="text-center py-4">
                   <i className="fas fa-users fa-3x text-muted mb-3"></i>
                   <p className="text-muted">No team members found</p>
+                  <div className="d-flex gap-2 justify-content-center">
+                    <Button
+                      variant="success"
+                      size="sm"
+                      onClick={handleShowAddMemberModal}
+                    >
+                      <i className="fas fa-user-plus me-1"></i>
+                      Add Your First Team Member
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      onClick={handleShowCreateEmployeeModal}
+                    >
+                      <i className="fas fa-user-plus me-1"></i>
+                      Create New Employee
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="list-group list-group-flush">
@@ -568,6 +843,278 @@ const TeamLeadDashboard = () => {
           <TaskCalendar showDeadlineNotifications={true} height="500px" />
         </div>
       </div>
+
+      {/* Add Member Modal */}
+      <Modal
+        show={showAddMemberModal}
+        onHide={handleCloseAddMemberModal}
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="fas fa-user-plus me-2"></i>
+            Add Team Member
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {addMemberError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setAddMemberError("")}
+            >
+              {addMemberError}
+            </Alert>
+          )}
+
+          {addMemberSuccess && (
+            <Alert
+              variant="success"
+              dismissible
+              onClose={() => setAddMemberSuccess("")}
+            >
+              {addMemberSuccess}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleAddMember}>
+            <Form.Group className="mb-3">
+              <Form.Label>Select Employee to Add</Form.Label>
+              <Form.Select
+                value={selectedUserId}
+                onChange={(e) => setSelectedUserId(e.target.value)}
+                required
+                disabled={addMemberLoading}
+              >
+                <option value="">Choose an employee...</option>
+                {availableUsers.map((user) => (
+                  <option key={user._id} value={user._id}>
+                    {user.firstName} {user.lastName} - {user.email}
+                  </option>
+                ))}
+              </Form.Select>
+              <Form.Text className="text-muted">
+                Only active employees not already in your team are shown.
+              </Form.Text>
+            </Form.Group>
+
+            <div className="d-flex gap-2">
+              <Button
+                type="submit"
+                variant="success"
+                disabled={addMemberLoading || !selectedUserId}
+              >
+                {addMemberLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Adding...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-user-plus me-1"></i>
+                    Add Member
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleCloseAddMemberModal}
+                disabled={addMemberLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
+
+      {/* Create Employee Modal */}
+      <Modal
+        show={showCreateEmployeeModal}
+        onHide={handleCloseCreateEmployeeModal}
+        centered
+        size="lg"
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>
+            <i className="fas fa-user-plus me-2"></i>
+            Create New Employee
+          </Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          {createEmployeeError && (
+            <Alert
+              variant="danger"
+              dismissible
+              onClose={() => setCreateEmployeeError("")}
+            >
+              {createEmployeeError}
+            </Alert>
+          )}
+
+          {createEmployeeSuccess && (
+            <Alert
+              variant="success"
+              dismissible
+              onClose={() => setCreateEmployeeSuccess("")}
+            >
+              {createEmployeeSuccess}
+            </Alert>
+          )}
+
+          <Form onSubmit={handleCreateEmployee}>
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>First Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="firstName"
+                    value={createEmployeeData.firstName}
+                    onChange={handleCreateEmployeeChange}
+                    required
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Last Name *</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="lastName"
+                    value={createEmployeeData.lastName}
+                    onChange={handleCreateEmployeeChange}
+                    required
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Email *</Form.Label>
+                  <Form.Control
+                    type="email"
+                    name="email"
+                    value={createEmployeeData.email}
+                    onChange={handleCreateEmployeeChange}
+                    required
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Phone</Form.Label>
+                  <Form.Control
+                    type="tel"
+                    name="phone"
+                    value={createEmployeeData.phone}
+                    onChange={handleCreateEmployeeChange}
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Username</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="username"
+                    value={createEmployeeData.username}
+                    onChange={handleCreateEmployeeChange}
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Password</Form.Label>
+                  <Form.Control
+                    type="password"
+                    name="password"
+                    value={createEmployeeData.password}
+                    onChange={handleCreateEmployeeChange}
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Department</Form.Label>
+                  <Form.Control
+                    type="text"
+                    name="department"
+                    value={createEmployeeData.department}
+                    onChange={handleCreateEmployeeChange}
+                    disabled={createEmployeeLoading}
+                  />
+                </Form.Group>
+              </Col>
+              <Col md={6}>
+                <Form.Group className="mb-3">
+                  <Form.Label>Role</Form.Label>
+                  <Form.Select
+                    name="role"
+                    value={createEmployeeData.role}
+                    onChange={handleCreateEmployeeChange}
+                    disabled={createEmployeeLoading}
+                  >
+                    <option value="employee">Employee</option>
+                    <option value="team_lead">Team Lead</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Form.Text className="text-muted mb-3">
+              New employee will be automatically assigned to your team:{" "}
+              {myTeam?.name}
+            </Form.Text>
+
+            <div className="d-flex gap-2">
+              <Button
+                type="submit"
+                variant="primary"
+                disabled={
+                  createEmployeeLoading ||
+                  !createEmployeeData.firstName ||
+                  !createEmployeeData.lastName ||
+                  !createEmployeeData.email
+                }
+              >
+                {createEmployeeLoading ? (
+                  <>
+                    <span className="spinner-border spinner-border-sm me-2"></span>
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-user-plus me-1"></i>
+                    Create Employee
+                  </>
+                )}
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={handleCloseCreateEmployeeModal}
+                disabled={createEmployeeLoading}
+              >
+                Cancel
+              </Button>
+            </div>
+          </Form>
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };

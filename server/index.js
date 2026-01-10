@@ -7,9 +7,7 @@ const app = require("./app-working");
 // Connect to database with working configuration
 const connectDB = async () => {
   try {
-    const connectionString =
-      process.env.MONGODB_URI ||
-      "mongodb+srv://mpsingh1932000_db_user:SjdO4YMSoN3s0Nr2@task-management.4t1yxy0.mongodb.net/?appName=task-management";
+    const connectionString = process.env.MONGODB_URI;
     console.log("Attempting MongoDB connection...");
 
     const conn = await mongoose.connect(connectionString, {
