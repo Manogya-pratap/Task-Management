@@ -22,7 +22,7 @@ import MyProjects from "./components/projects/MyProjects";
 import TeamProjects from "./components/projects/TeamProjects";
 import MyTasks from "./components/tasks/MyTasks";
 import TeamTasks from "./components/tasks/TeamTasks";
-import MyTeam from "./components/teams/MyTeam";
+import MyTeam from "./components/teams/MyTeam.js";
 import Reports from "./components/reports/Reports";
 import Analytics from "./components/analytics/Analytics";
 import Settings from "./components/settings/Settings";
