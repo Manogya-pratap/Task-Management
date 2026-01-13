@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Card,
   Table,
@@ -74,11 +74,7 @@ const AuditLogs = () => {
     { value: "REPORT", label: "Reports" },
   ];
 
-  useEffect(() => {
-    fetchAuditLogs();
-  }, [filters]);
-
-  const fetchAuditLogs = async () => {
+  const fetchAuditLogs = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -127,7 +123,11 @@ const AuditLogs = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filters, isUserActivity, targetUserId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchAuditLogs();
+  }, [fetchAuditLogs]);
 
   const generateMockLogs = () => {
     return [

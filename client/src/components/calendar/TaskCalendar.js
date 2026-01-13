@@ -74,7 +74,7 @@ const TaskCalendar = ({
     const startOfMonth = currentDate.clone().startOf("month");
     const endOfMonth = currentDate.clone().endOf("month");
     const startOfCalendar = startOfMonth.clone().startOf("week");
-    const endOfCalendar = endOfMonth.clone().endOf("week");
+    const endOfCalendar = endOfMonth.clone().endOf("month").endOf("week");
 
     const days = [];
     let day = startOfCalendar.clone();

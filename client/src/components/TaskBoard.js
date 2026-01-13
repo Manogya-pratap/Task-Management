@@ -34,7 +34,6 @@ const TASK_STATUSES = [
 const TaskBoard = ({ projectId = null, className = "" }) => {
   const { user } = useAuth();
   const {
-    tasks: allTasks,
     projects,
     loading,
     errors,
@@ -43,9 +42,10 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
     createTask,
     updateTask,
     deleteTask,
+    tasks: globalTasks, // Rename to avoid conflict
   } = useApp();
 
-  const [tasks, setTasks] = useState({});
+  const [localTasks, setLocalTasks] = useState({}); // Rename to avoid conflict
   const [draggedTask, setDraggedTask] = useState(null);
 
   // Task form state
@@ -65,6 +65,16 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
     });
     return initialTasks;
   }, []);
+
+  // Generate sample tasks with proper ObjectId-like format
+  const generateObjectId = () => {
+    // Generate a 24-character hex string to mimic MongoDB ObjectId
+    return (
+      Math.random().toString(16).substr(2, 8) +
+      Math.random().toString(16).substr(2, 8) +
+      Math.random().toString(16).substr(2, 8)
+    );
+  };
 
   // Organize tasks by status from AppContext
   useEffect(() => {
@@ -87,7 +97,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
         attachments: [{ name: "dashboard-mockup.png" }],
       },
       {
-        _id: "sample-2",
+        _id: generateObjectId(),
         title: "Implement authentication system",
         description:
           "Add secure login and registration functionality with JWT tokens",
@@ -101,7 +111,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
         attachments: [],
       },
       {
-        _id: "sample-3",
+        _id: generateObjectId(),
         title: "Database optimization",
         description:
           "Improve query performance and add proper indexing for better speed",
@@ -115,7 +125,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
         attachments: [{ name: "performance-report.pdf" }],
       },
       {
-        _id: "sample-4",
+        _id: generateObjectId(),
         title: "Create API documentation",
         description:
           "Write comprehensive API docs with examples and testing guides",
@@ -129,7 +139,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
         attachments: [],
       },
       {
-        _id: "sample-5",
+        _id: generateObjectId(),
         title: "Setup testing framework",
         description:
           "Configure Jest and React Testing Library for unit and integration tests",
@@ -154,7 +164,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
     console.log("TaskBoard - FORCED sample tasks for testing:", sampleTasks);
     console.log("TaskBoard - Tasks by status:", tasksByStatus);
 
-    setTasks(tasksByStatus);
+    setLocalTasks(tasksByStatus);
   }, [projectId, initializeTasks]); // Remove allTasks dependency to force sample data
 
   // Fetch tasks on component mount
@@ -162,19 +172,39 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
     fetchTasks();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Sync local tasks state with global AppContext tasks
+  useEffect(() => {
+    if (globalTasks && globalTasks.length > 0) {
+      // Update local tasks state when global tasks change
+      const organizedTasks = {};
+      TASK_STATUSES.forEach((status) => {
+        organizedTasks[status.key] = [];
+      });
+
+      // Organize global tasks by status
+      globalTasks.forEach((task) => {
+        if (organizedTasks[task.status]) {
+          organizedTasks[task.status].push(task);
+        }
+      });
+
+      setLocalTasks(organizedTasks);
+    }
+  }, [globalTasks]); // Sync with global tasks state
+
   // Handle task status update via drag and drop
   const handleTaskMove = async (taskId, newStatus) => {
     try {
-      // Find the task in current tasks
+      // Find the task in current local tasks
       let taskToMove = null;
       let oldStatus = null;
 
-      for (const status in tasks) {
-        const taskIndex = tasks[status].findIndex(
+      for (const status in localTasks) {
+        const taskIndex = localTasks[status].findIndex(
           (task) => task._id === taskId
         );
         if (taskIndex !== -1) {
-          taskToMove = tasks[status][taskIndex];
+          taskToMove = localTasks[status][taskIndex];
           oldStatus = status;
           break;
         }
@@ -240,7 +270,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
 
   // Export functionality
   const handleExport = (format) => {
-    const tasksForExport = Object.values(tasks).flat();
+    const tasksForExport = Object.values(localTasks).flat();
     const exportData = prepareTasksForExport(tasksForExport, projects);
     const filename = `tasks_${new Date().toISOString().split("T")[0]}`;
 
@@ -290,7 +320,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
   const getTaskCounts = () => {
     const counts = {};
     TASK_STATUSES.forEach((status) => {
-      counts[status.key] = tasks[status.key]?.length || 0;
+      counts[status.key] = localTasks[status.key]?.length || 0;
     });
     return counts;
   };
@@ -329,12 +359,6 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
   }
 
   const taskCounts = getTaskCounts();
-  const totalTasks = Object.values(taskCounts).reduce(
-    (sum, count) => sum + count,
-    0
-  );
-
-  // Check if user can create tasks
   // eslint-disable-next-line no-unused-vars
   const canCreateTasks =
     user &&
@@ -485,7 +509,7 @@ const TaskBoard = ({ projectId = null, className = "" }) => {
               title={status.label}
               color={status.color}
               icon={status.icon}
-              tasks={tasks[status.key] || []}
+              tasks={localTasks[status.key] || []}
               onTaskMove={handleTaskMove}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}

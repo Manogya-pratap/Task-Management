@@ -15,6 +15,7 @@ const TeamLeadDashboard = () => {
   // Coordinated loading state
   const [isDashboardReady, setIsDashboardReady] = useState(false);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+  // eslint-disable-next-line no-unused-vars
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
   // Add Member Modal state

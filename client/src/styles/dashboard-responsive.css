@@ -1,0 +1,446 @@
+/* Responsive Dashboard Styles */
+
+/* Base dashboard container */
+.dashboard-container {
+  padding: 1rem;
+  max-width: 100%;
+  margin: 0 auto;
+}
+
+/* Mobile-first approach */
+@media (max-width: 575.98px) {
+  .dashboard-container {
+    padding: 0.5rem;
+  }
+
+  /* Stack cards vertically on mobile */
+  .row {
+    margin-bottom: 1rem;
+  }
+
+  .col-12,
+  .col-lg-3,
+  .col-lg-4,
+  .col-lg-6,
+  .col-lg-8,
+  .col-md-4,
+  .col-md-6,
+  .col-md-8 {
+    margin-bottom: 1rem;
+    width: 100% !important;
+    max-width: 100%;
+  }
+
+  /* Mobile card adjustments */
+  .card {
+    margin-bottom: 1rem;
+    border-radius: 0.75rem;
+    overflow: hidden;
+  }
+
+  .card-body {
+    padding: 1rem !important;
+  }
+
+  /* Mobile text sizing */
+  .card-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .h1,
+  .h2,
+  .h3,
+  .h4,
+  .h5,
+  .h6 {
+    font-size: 1.2rem !important;
+    line-height: 1.3;
+  }
+
+  /* Mobile icon sizing */
+  .fa-2x {
+    font-size: 1.5rem !important;
+  }
+
+  .fa-3x,
+  .fa-4x {
+    font-size: 1.8rem !important;
+  }
+
+  /* Mobile progress bars */
+  .progress {
+    height: 0.5rem !important;
+    margin-top: 0.5rem;
+  }
+
+  /* Mobile flex adjustments */
+  .d-flex {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .flex-column {
+    width: 100%;
+  }
+
+  .text-md-end {
+    text-align: left !important;
+    margin-top: 0.5rem;
+  }
+
+  /* Mobile specific card layouts */
+  .metrics-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    min-height: 120px;
+    justify-content: center;
+  }
+
+  .metrics-icon {
+    margin-bottom: 0.75rem;
+  }
+
+  .metrics-value {
+    font-size: 2rem;
+    font-weight: bold;
+    line-height: 1;
+    margin-bottom: 0.25rem;
+  }
+
+  .metrics-label {
+    font-size: 0.9rem;
+    opacity: 0.8;
+  }
+}
+
+/* Tablet adjustments */
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .dashboard-container {
+    padding: 1.5rem;
+  }
+
+  /* Two column layout on tablet */
+  .col-lg-3,
+  .col-md-6 {
+    flex: 0 0 48%;
+    max-width: 48%;
+  }
+
+  .col-lg-4,
+  .col-md-4 {
+    flex: 0 0 48%;
+    max-width: 48%;
+  }
+
+  /* Tablet card adjustments */
+  .card-body {
+    padding: 1.25rem !important;
+  }
+
+  .card-title {
+    font-size: 1.15rem !important;
+  }
+
+  /* Restore horizontal flex on tablet */
+  .d-flex {
+    flex-direction: row !important;
+    align-items: center;
+  }
+
+  .text-md-end {
+    text-align: right !important;
+  }
+
+  /* Tablet specific layouts */
+  .metrics-card {
+    padding: 1.75rem 1.25rem;
+    min-height: 140px;
+  }
+
+  .metrics-value {
+    font-size: 2.25rem;
+  }
+}
+
+/* Desktop adjustments */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .dashboard-container {
+    padding: 2rem;
+  }
+
+  /* Standard Bootstrap grid behavior on desktop */
+  .d-flex {
+    flex-direction: row !important;
+  }
+
+  /* Desktop card improvements */
+  .card-body {
+    padding: 1.5rem !important;
+  }
+
+  .card-title {
+    font-size: 1.2rem !important;
+  }
+
+  .metrics-card {
+    padding: 2rem 1.5rem;
+    min-height: 160px;
+  }
+
+  .metrics-value {
+    font-size: 2.5rem;
+  }
+}
+
+/* Large desktop adjustments */
+@media (min-width: 992px) {
+  .dashboard-container {
+    padding: 2.5rem;
+  }
+
+  /* Optimize for large screens */
+  .card {
+    transition:
+      transform 0.3s ease,
+      box-shadow 0.3s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .card-body {
+    padding: 1.75rem !important;
+  }
+
+  .metrics-card {
+    padding: 2.25rem 1.75rem;
+    min-height: 180px;
+  }
+
+  .metrics-value {
+    font-size: 2.75rem;
+  }
+}
+
+/* Extra large desktop */
+@media (min-width: 1200px) {
+  .dashboard-container {
+    max-width: 1400px;
+    padding: 3rem;
+  }
+
+  .metrics-card {
+    padding: 2.5rem 2rem;
+    min-height: 200px;
+  }
+
+  .metrics-value {
+    font-size: 3rem;
+  }
+}
+
+/* Responsive table fixes */
+.table-responsive {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 767.98px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+
+  .table th,
+  .table td {
+    padding: 0.5rem 0.25rem;
+  }
+}
+
+/* Responsive progress bars */
+.progress {
+  background-color: rgba(0, 0, 0, 0.1);
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+.progress-bar {
+  transition: width 0.6s ease;
+}
+
+/* Responsive badges */
+.badge {
+  font-size: 0.75rem;
+  padding: 0.35rem 0.65rem;
+}
+
+@media (max-width: 575.98px) {
+  .badge {
+    font-size: 0.7rem;
+    padding: 0.25rem 0.5rem;
+  }
+}
+
+/* Responsive alerts */
+.alert {
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+}
+
+@media (max-width: 575.98px) {
+  .alert {
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+/* Responsive modal fixes */
+.modal-dialog {
+  margin: 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .modal-dialog {
+    margin: 0.5rem;
+    max-width: 95%;
+  }
+
+  .modal-body {
+    padding: 1rem;
+  }
+}
+
+/* Responsive form elements */
+.form-control {
+  font-size: 1rem;
+}
+
+@media (max-width: 575.98px) {
+  .form-control {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Responsive buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 575.98px) {
+  .btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 1rem;
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+}
+
+/* Responsive calendar and timeline */
+@media (max-width: 767.98px) {
+  .calendar-container,
+  .timeline-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+/* Performance optimizations */
+.dashboard-card {
+  will-change: transform;
+  contain: layout style paint;
+}
+
+/* Loading states */
+.loading-spinner {
+  padding: 2rem;
+}
+
+@media (max-width: 575.98px) {
+  .loading-spinner {
+    padding: 1rem;
+  }
+}
+
+/* Responsive utilities */
+.text-truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 767.98px) {
+  .text-truncate {
+    max-width: 200px;
+  }
+}
+
+/* Responsive spacing */
+@media (max-width: 575.98px) {
+  .mb-4 {
+    margin-bottom: 1.5rem !important;
+  }
+
+  .mb-3 {
+    margin-bottom: 1rem !important;
+  }
+
+  .mb-2 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  .mb-1 {
+    margin-bottom: 0.5rem !important;
+  }
+}
+
+/* Responsive icons */
+@media (max-width: 575.98px) {
+  .fas {
+    margin-right: 0.5rem;
+  }
+
+  .fa-2x {
+    font-size: 1.25rem !important;
+  }
+
+  .fa-3x {
+    font-size: 1.5rem !important;
+  }
+}
+
+/* Responsive grid fixes */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -15px;
+  margin-left: -15px;
+}
+
+@media (max-width: 575.98px) {
+  .row {
+    margin-right: -0.5rem;
+    margin-left: -0.5rem;
+  }
+}
+
+/* Responsive card hover effects */
+.card {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 767.98px) {
+  .card:hover {
+    transform: none; /* Disable hover effects on mobile for better performance */
+  }
+}

@@ -17,6 +17,11 @@ const Layout = ({ children }) => {
     const saved = localStorage.getItem("sidebarCollapsed");
     return saved ? JSON.parse(saved) : false;
   });
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [windowSize, setWindowSize] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+  });
   // eslint-disable-next-line no-unused-vars
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isProfileEditMode, setIsProfileEditMode] = useState(false);
@@ -31,6 +36,10 @@ const Layout = ({ children }) => {
     });
     setSidebarCollapsed(newState);
     localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
+  };
+
+  const toggleMobileSidebar = () => {
+    setMobileSidebarOpen(!mobileSidebarOpen);
   };
 
   // Update current time every second
@@ -297,9 +306,17 @@ const Layout = ({ children }) => {
         overflow: "hidden",
       }}
     >
+      {/* Mobile Menu Toggle Button */}
+      <button
+        className="mobile-menu-toggle"
+        onClick={toggleMobileSidebar}
+        title={mobileSidebarOpen ? "Close menu" : "Open menu"}
+      >
+        <i className={`fas ${mobileSidebarOpen ? "fa-times" : "fa-bars"}`}></i>
+      </button>
       {/* Sidebar */}
       <aside
-        className={`sidebar ${sidebarCollapsed ? "collapsed" : ""}`}
+        className={`sidebar ${sidebarCollapsed ? "collapsed" : ""} ${mobileSidebarOpen ? "mobile-open" : ""}`}
         style={{
           width: sidebarCollapsed ? "80px" : "280px",
           height: "100vh",
@@ -554,9 +571,10 @@ const Layout = ({ children }) => {
         style={{
           position: "fixed",
           top: 0,
-          left: sidebarCollapsed ? "80px" : "280px",
+          left:
+            windowSize.width <= 768 ? "0" : sidebarCollapsed ? "80px" : "280px",
           right: "0",
-          height: "60px",
+          height: windowSize.width <= 768 ? "50px" : "60px",
           background: "linear-gradient(90deg, #ffffff 0%, #f8fafc 100%)",
           borderBottom: "1px solid #e2e8f0",
           zIndex: 999,
@@ -680,10 +698,15 @@ const Layout = ({ children }) => {
           transition: "margin-left 0.3s ease",
           minHeight: "100vh",
           background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-          paddingTop: "60px", // Match navbar height exactly
-          marginTop: 0, // Remove any extra margin
-          paddingLeft: "20px", // Add some padding from sidebar
-          paddingRight: "20px", // Add some padding from right edge
+          paddingTop: windowSize.width <= 768 ? "50px" : "60px",
+          marginTop: 0,
+          paddingLeft:
+            windowSize.width <= 768
+              ? "15px"
+              : sidebarCollapsed
+                ? "100px"
+                : "300px",
+          paddingRight: windowSize.width <= 768 ? "15px" : "20px",
         }}
       >
         <div className="content-wrapper" style={{ padding: "20px" }}>

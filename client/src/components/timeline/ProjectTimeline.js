@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import Timeline from "react-calendar-timeline";
 import moment from "moment";
 import api from "../../services/api";
@@ -11,6 +11,8 @@ const ProjectTimeline = ({ projectId = null, onTaskClick }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [lastFetchTime, setLastFetchTime] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
   const [selectedStatuses, setSelectedStatuses] = useState([
     "new",
     "scheduled",
@@ -57,11 +59,17 @@ const ProjectTimeline = ({ projectId = null, onTaskClick }) => {
     []
   );
 
-  useEffect(() => {
-    fetchTimelineData();
-  }, [projectId]);
+  const fetchTimelineData = useCallback(async () => {
+    // Prevent multiple simultaneous requests and rapid retries
+    const now = Date.now();
+    if (loading || now - lastFetchTime < 2000) {
+      console.log("ProjectTimeline: Skipping request - loading or too soon");
+      return;
+    }
 
-  const fetchTimelineData = async () => {
+    setLastFetchTime(now);
+    setRetryCount(0);
+
     try {
       setLoading(true);
       setError(null);
@@ -70,42 +78,145 @@ const ProjectTimeline = ({ projectId = null, onTaskClick }) => {
       console.log("ProjectTimeline: User role:", user?.role);
       console.log("ProjectTimeline: User teamId:", user?.teamId);
 
-      let tasksResponse, projectsResponse;
+      // Implement lazy loading with retry mechanism
+      const maxRetries = 3;
+      let currentRetryCount = 0;
+      let tasksData = [];
+      let projectsData = [];
 
-      // Use role-specific endpoints for better data filtering
-      if (user?.role === "employee") {
-        // Employee gets their own tasks and projects
-        tasksResponse = await api.get("/tasks/my");
-        projectsResponse = await api.get("/projects/my");
-      } else if (user?.role === "team_lead") {
-        // Team lead gets team tasks and projects
-        tasksResponse = await api.get("/tasks/team");
-        projectsResponse = await api.get("/projects/team");
-      } else {
-        // Admin/MD gets all tasks and projects
-        tasksResponse = await api.get("/tasks");
-        projectsResponse = await api.get("/projects");
+      const fetchWithRetry = async (retryCount) => {
+        setRetryCount(retryCount + 1);
+
+        // Use role-specific endpoints for better data filtering
+        if (user?.role === "employee") {
+          // Employee gets their own tasks and projects
+          const [tasksResponse, projectsResponse] = await Promise.all([
+            api.get("/tasks/my").catch((err) => {
+              console.warn("Failed to fetch employee tasks:", err);
+              return { data: { data: [] } };
+            }),
+            api.get("/projects/my").catch((err) => {
+              console.warn("Failed to fetch employee projects:", err);
+              return { data: { data: [] } };
+            }),
+          ]);
+          return {
+            tasksData: tasksResponse.data?.data || [],
+            projectsData: projectsResponse.data?.data || [],
+          };
+        } else if (user?.role === "team_lead") {
+          // Team lead gets team tasks and projects
+          const [tasksResponse, projectsResponse] = await Promise.all([
+            api.get("/tasks/team").catch((err) => {
+              console.warn("Failed to fetch team tasks:", err);
+              return { data: { data: [] } };
+            }),
+            api.get("/projects/team").catch((err) => {
+              console.warn("Failed to fetch team projects:", err);
+              return { data: { data: [] } };
+            }),
+          ]);
+          return {
+            tasksData: tasksResponse.data?.data || [],
+            projectsData: projectsResponse.data?.data || [],
+          };
+        } else {
+          // Admin/MD gets all tasks and projects
+          const [tasksResponse, projectsResponse] = await Promise.all([
+            api.get("/tasks").catch((err) => {
+              console.warn("Failed to fetch all tasks:", err);
+              return { data: { data: [] } };
+            }),
+            api.get("/projects").catch((err) => {
+              console.warn("Failed to fetch all projects:", err);
+              return { data: { data: [] } };
+            }),
+          ]);
+          return {
+            tasksData: tasksResponse.data?.data || [],
+            projectsData: projectsResponse.data?.data || [],
+          };
+        }
+      };
+
+      while (currentRetryCount < maxRetries) {
+        try {
+          const result = await fetchWithRetry(currentRetryCount);
+          tasksData = result.tasksData;
+          projectsData = result.projectsData;
+
+          // If we got data, break the retry loop
+          if (tasksData.length > 0 || projectsData.length > 0) {
+            console.log("ProjectTimeline: Successfully fetched data:", {
+              tasks: tasksData.length,
+              projects: projectsData.length,
+            });
+            break;
+          }
+
+          // If no data, try again after a delay
+          currentRetryCount++;
+          if (currentRetryCount < maxRetries) {
+            console.log(
+              `ProjectTimeline: No data found, retry ${currentRetryCount}/${maxRetries}`
+            );
+            await new Promise((resolve) =>
+              setTimeout(resolve, 1000 * currentRetryCount)
+            );
+          }
+        } catch (retryError) {
+          console.warn(
+            `ProjectTimeline: Retry ${currentRetryCount + 1} failed:`,
+            retryError
+          );
+          currentRetryCount++;
+          if (currentRetryCount < maxRetries) {
+            await new Promise((resolve) =>
+              setTimeout(resolve, 1000 * currentRetryCount)
+            );
+          }
+        }
       }
 
-      const tasksData = tasksResponse.data.data?.tasks || [];
-      const projectsData = projectsResponse.data.data?.projects || [];
-
-      console.log("Timeline data fetched:", {
-        tasks: tasksData.length,
-        projects: projectsData.length,
-        sampleTask: tasksData[0],
-        sampleProject: projectsData[0],
-      });
-
+      // Set the data (even if empty)
       setTasks(tasksData);
       setProjects(projectsData);
-    } catch (err) {
-      console.error("Error fetching timeline data:", err);
-      setError("Failed to load timeline data. Please try again.");
-    } finally {
       setLoading(false);
+      setRetryCount(0);
+
+      // Show warning if no data after all retries
+      if (tasksData.length === 0 && projectsData.length === 0) {
+        console.warn("ProjectTimeline: No data available after all retries");
+        setError(
+          "No timeline data available. Please check if you have any tasks or projects assigned."
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching timeline data:", error);
+
+      // Handle timeout errors gracefully
+      if (error.code === "ECONNABORTED" || error.message.includes("timeout")) {
+        setError(
+          "Server is taking too long to respond. Please try again later."
+        );
+      } else if (error.response?.status === 404) {
+        setError("Timeline data not found. Please check your permissions.");
+      } else if (error.response?.status === 403) {
+        setError("You don't have permission to view timeline data.");
+      } else {
+        setError(error.message || "Failed to fetch timeline data");
+      }
+
+      setLoading(false);
+      setRetryCount(0);
+      setTasks([]);
+      setProjects([]);
     }
-  };
+  }, [loading, user, lastFetchTime]);
+
+  useEffect(() => {
+    fetchTimelineData();
+  }, [projectId, fetchTimelineData]);
 
   // Transform tasks into timeline groups and items
   const { groups, items } = useMemo(() => {
@@ -320,7 +431,22 @@ const ProjectTimeline = ({ projectId = null, onTaskClick }) => {
           <div className="spinner-border text-primary mb-3" role="status">
             <span className="visually-hidden">Loading...</span>
           </div>
-          <p className="text-muted">Loading timeline data...</p>
+          <p className="text-muted">
+            {retryCount > 0
+              ? `Retrying... (${retryCount}/3)`
+              : "Loading timeline data..."}
+          </p>
+          <button
+            className="btn btn-outline-secondary btn-sm"
+            onClick={() => {
+              setRetryCount(0);
+              fetchTimelineData();
+            }}
+            disabled={loading}
+          >
+            <i className="fas fa-times me-2"></i>
+            Cancel
+          </button>
         </div>
       </div>
     );
@@ -375,10 +501,24 @@ const ProjectTimeline = ({ projectId = null, onTaskClick }) => {
             </h5>
           </div>
           <div className="col-auto">
-            <small className="text-muted">
-              {items.length} tasks | {moment(timeRange.start).format("MMM DD")}{" "}
-              - {moment(timeRange.end).format("MMM DD, YYYY")}
-            </small>
+            <div className="d-flex align-items-center gap-3">
+              <button
+                className="btn btn-outline-primary btn-sm"
+                onClick={fetchTimelineData}
+                disabled={loading}
+                title="Refresh timeline data"
+              >
+                <i
+                  className={`fas ${loading ? "fa-spinner fa-spin" : "fa-refresh"} me-1`}
+                ></i>
+                Refresh
+              </button>
+              <small className="text-muted">
+                {items.length} tasks |{" "}
+                {moment(timeRange.start).format("MMM DD")} -{" "}
+                {moment(timeRange.end).format("MMM DD, YYYY")}
+              </small>
+            </div>
           </div>
         </div>
       </div>
