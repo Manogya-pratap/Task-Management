@@ -93,7 +93,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
-  backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   overflow: hidden;
   transform: scale(1.02);
@@ -572,7 +571,6 @@
 .sidebar-toggle-btn {
   position: relative;
   overflow: hidden;
-  backdrop-filter: blur(10px);
 }
 
 .sidebar-toggle-btn::before {
@@ -609,5 +607,4 @@
 
 .sidebar-toggle-btn:hover i {
   transform: rotate(90deg) scale(1.1);
-  filter: drop-shadow(0 2px 4px rgba(128, 0, 32, 0.3));
 }

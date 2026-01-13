@@ -21,11 +21,14 @@ const TaskColumn = ({
   const [{ isOver, canDrop }, drop] = useDrop({
     accept: "task",
     drop: (item) => {
-      if (item.status !== status) {
+      // Add safety checks for the drag item
+      if (item && item.id && item.status !== status) {
         onTaskMove(item.id, status);
       }
     },
-    canDrop: (item) => canAcceptDrop && item.status !== status,
+    canDrop: (item) => {
+      return canAcceptDrop && item && item.status !== status;
+    },
     collect: (monitor) => ({
       isOver: monitor.isOver(),
       canDrop: monitor.canDrop(),
@@ -93,7 +96,7 @@ const TaskColumn = ({
                   task={task}
                   onDragStart={onDragStart}
                   onDragEnd={onDragEnd}
-                  isDragging={draggedTask && draggedTask._id === task._id}
+                  isDragging={draggedTask && task._id === draggedTask._id}
                   onClick={onTaskClick ? () => onTaskClick(task) : null}
                   className="task-card-item"
                 />

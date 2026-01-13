@@ -4,6 +4,7 @@ import { useApp } from "../../contexts/AppContext";
 import api from "../../services/api";
 import TaskCalendar from "../calendar/TaskCalendar";
 import TaskBoard from "../TaskBoard";
+import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import { ComponentLoader } from "../LoadingSpinner";
 import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
 
@@ -471,19 +472,25 @@ const TeamLeadDashboard = () => {
             <div className="card-body text-center">
               <div className="d-flex align-items-center justify-content-center mb-3">
                 <div className="rounded-circle bg-success bg-opacity-10 p-3">
-                  <i className="fas fa-chart-line fa-2x text-success"></i>
+                  <i className="fas fa-users fa-2x text-success"></i>
                 </div>
               </div>
               <h3 className="card-title text-success mb-1">
                 {teamCompletion}%
               </h3>
               <p className="card-text text-muted mb-2">Team Progress</p>
-              <div className="progress" style={{ height: "6px" }}>
-                <div
-                  className="progress-bar bg-success"
-                  role="progressbar"
-                  style={{ width: `${teamCompletion}%` }}
-                ></div>
+              <AnimatedProgressBar
+                value={teamCompletion}
+                variant="success"
+                height="6px"
+                showLabel={false}
+                showSyncStatus={true}
+                dataType="all"
+                className="mb-2"
+              />
+              <div className="live-indicator">
+                <i className="fas fa-circle me-1"></i>
+                Live
               </div>
             </div>
           </div>

@@ -734,7 +734,6 @@ const TaskForm = ({
           padding: 0.75rem 1rem;
           transition: all 0.3s ease;
           background: rgba(255, 255, 255, 0.9);
-          backdrop-filter: blur(5px);
           font-size: 1rem;
         }
 

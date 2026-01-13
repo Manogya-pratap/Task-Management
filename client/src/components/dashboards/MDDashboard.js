@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
+import api from "../../services/api";
 import TaskCalendar from "../calendar/TaskCalendar";
+import TaskBoard from "../TaskBoard";
 import ProjectTimeline from "../timeline/ProjectTimeline";
+import AnimatedProgressBar from "../shared/AnimatedProgressBar";
+import PulseTest from "../shared/PulseTest";
 import { ComponentLoader } from "../LoadingSpinner";
+import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
 
 const MDDashboard = () => {
   const { getUserFullName } = useAuth();
@@ -262,12 +267,18 @@ const MDDashboard = () => {
                 {overallCompletion}%
               </h3>
               <p className="card-text text-muted mb-2">Overall Progress</p>
-              <div className="progress" style={{ height: "6px" }}>
-                <div
-                  className="progress-bar bg-success"
-                  role="progressbar"
-                  style={{ width: `${overallCompletion}%` }}
-                ></div>
+              <AnimatedProgressBar
+                value={overallCompletion}
+                variant="success"
+                height="6px"
+                showLabel={false}
+                showSyncStatus={true}
+                dataType="all"
+                className="mb-2"
+              />
+              <div className="live-indicator">
+                <i className="fas fa-circle me-1"></i>
+                Live
               </div>
             </div>
           </div>
@@ -314,21 +325,38 @@ const MDDashboard = () => {
                 {/* Visual Progress Bar */}
                 <div className="mt-4">
                   <h6 className="mb-3">Company-wide Task Progress</h6>
-                  <div className="progress mb-2" style={{ height: "12px" }}>
-                    {taskStats.statusStats &&
-                      taskStats.statusStats.map((stat, index) => {
-                        const percentage =
-                          totalTasks > 0 ? (stat.count / totalTasks) * 100 : 0;
-                        return (
-                          <div
-                            key={index}
-                            className={`progress-bar bg-${getTaskStatusColor(stat._id)}`}
-                            role="progressbar"
-                            style={{ width: `${percentage}%` }}
-                            title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
-                          ></div>
-                        );
-                      })}
+                  <div
+                    className="progress-enhanced mb-2"
+                    style={{ height: "12px" }}
+                  >
+                    <div className="progress-multi-stage">
+                      {taskStats.statusStats &&
+                        taskStats.statusStats.map((stat, index) => {
+                          const percentage =
+                            totalTasks > 0
+                              ? (stat.count / totalTasks) * 100
+                              : 0;
+                          return (
+                            <div
+                              key={index}
+                              className={`progress-stage progress-bar-animated bg-${getTaskStatusColor(stat._id)}`}
+                              style={{
+                                width: `${percentage}%`,
+                                minWidth: percentage > 0 ? "20px" : "0",
+                              }}
+                              title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
+                            >
+                              {percentage > 10 && (
+                                <span className="progress-bar-text">
+                                  {stat.count}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                    {/* Sync Indicator */}
+                    <div className="progress-sync-indicator" />
                   </div>
                   <div className="d-flex justify-content-between small text-muted">
                     <span>Task Distribution</span>
@@ -654,6 +682,24 @@ const MDDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Pulse Animation Test - Temporary for testing */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card border-0 shadow-sm">
+            <div className="card-header bg-white border-0">
+              <h5 className="card-title mb-0">
+                <i className="fas fa-pulse me-2 text-primary"></i>
+                Pulse Animation Test
+              </h5>
+            </div>
+            <div className="card-body">
+              <PulseTest />
+            </div>
+          </div>
+        </div>
+      </div>
+
       {showCompletedTasks && <div className="modal-backdrop fade show"></div>}
     </div>
   );

@@ -3,6 +3,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
 import TaskCalendar from "../calendar/TaskCalendar";
 import ProjectTimeline from "../timeline/ProjectTimeline";
+import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import { ComponentLoader } from "../LoadingSpinner";
 import "../../styles/dashboard-responsive.css";
 
@@ -260,12 +261,18 @@ const EmployeeDashboard = () => {
               </div>
               <div className="metrics-value">{completedTasks}</div>
               <div className="metrics-label">Completed</div>
-              <div className="progress mt-2" style={{ height: "8px" }}>
-                <div
-                  className="progress-bar bg-success"
-                  role="progressbar"
-                  style={{ width: `${personalCompletion}%` }}
-                ></div>
+              <AnimatedProgressBar
+                value={personalCompletion}
+                variant="success"
+                height="8px"
+                showLabel={false}
+                showSyncStatus={true}
+                dataType="all"
+                className="mt-2"
+              />
+              <div className="live-indicator">
+                <i className="fas fa-circle me-1"></i>
+                Live
               </div>
             </div>
           </div>

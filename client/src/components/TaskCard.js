@@ -332,7 +332,6 @@ const TaskCard = ({
           overflow: hidden;
           background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
           border-radius: 0.75rem !important;
-          backdrop-filter: blur(10px);
         }
 
         .enhanced-task-card::before {
