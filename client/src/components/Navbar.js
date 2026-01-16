@@ -43,19 +43,19 @@ const Navbar = () => {
           path: '/projects'
         },
         {
-          label: 'Task Board',
-          icon: 'fas fa-tasks',
-          path: '/tasks'
+          label: 'Progress Board',
+          icon: 'fas fa-columns',
+          path: '/progressboard'
+        },
+        {
+          label: 'Daily Logs',
+          icon: 'fas fa-clipboard-list',
+          path: '/daily-logs'
         },
         {
           label: 'Calendar',
           icon: 'fas fa-calendar',
           path: '/calendar'
-        },
-        {
-          label: 'Timeline',
-          icon: 'fas fa-timeline',
-          path: '/timeline'
         },
         {
           label: 'Reports',
@@ -92,19 +92,19 @@ const Navbar = () => {
           path: '/my-projects'
         },
         {
-          label: 'Task Board',
+          label: 'Progress Board',
+          icon: 'fas fa-columns',
+          path: '/progressboard'
+        },
+        {
+          label: 'Daily Logs',
           icon: 'fas fa-clipboard-list',
-          path: '/tasks'
+          path: '/daily-logs'
         },
         {
           label: 'Calendar',
           icon: 'fas fa-calendar',
           path: '/calendar'
-        },
-        {
-          label: 'Timeline',
-          icon: 'fas fa-timeline',
-          path: '/team-timeline'
         },
         {
           label: 'Team Reports',
@@ -126,19 +126,19 @@ const Navbar = () => {
           path: '/my-projects'
         },
         {
-          label: 'Task Board',
-          icon: 'fas fa-tasks',
-          path: '/tasks'
+          label: 'Progress Board',
+          icon: 'fas fa-columns',
+          path: '/progressboard'
+        },
+        {
+          label: 'Daily Logs',
+          icon: 'fas fa-clipboard-check',
+          path: '/daily-logs'
         },
         {
           label: 'Calendar',
           icon: 'fas fa-calendar',
           path: '/calendar'
-        },
-        {
-          label: 'Timeline',
-          icon: 'fas fa-timeline',
-          path: '/my-timeline'
         }
       );
     }
@@ -150,18 +150,22 @@ const Navbar = () => {
     <nav className="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
       <div className="container-fluid">
         {/* Brand */}
-        <button 
-          className="navbar-brand d-flex align-items-center btn btn-link text-decoration-none p-0 border-0"
-          onClick={() => navigate('/dashboard')}
-          style={{ background: 'none' }}
+        <a 
+          href="#"
+          className="navbar-brand d-flex align-items-center text-white"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate('/dashboard');
+          }}
+          style={{ cursor: 'pointer' }}
         >
-          <i className="fas fa-tasks me-2 text-white"></i>
-          <span className="d-none d-md-inline text-white">Daily Activity Tracker</span>
-          <span className="d-md-none text-white">DAT</span>
-          <small className="ms-2 d-none d-lg-inline text-light opacity-75">
+          <i className="fas fa-tasks me-2"></i>
+          <span className="d-none d-md-inline">Daily Activity Tracker</span>
+          <span className="d-md-none">DAT</span>
+          <small className="ms-2 d-none d-lg-inline opacity-75">
             - Yantrik Automation
           </small>
-        </button>
+        </a>
 
         {/* Mobile toggle button */}
         <button 
@@ -182,16 +186,19 @@ const Navbar = () => {
           <ul className="navbar-nav me-auto">
             {getNavigationItems().map((item, index) => (
               <li key={index} className="nav-item">
-                <button 
-                  className={`nav-link btn btn-link text-decoration-none border-0 ${
+                <a
+                  href="#"
+                  className={`nav-link ${
                     location.pathname === item.path ? 'active' : ''
                   }`}
-                  onClick={() => navigate(item.path)}
-                  style={{ background: 'none', color: 'inherit' }}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    navigate(item.path);
+                  }}
                 >
                   <i className={`${item.icon} me-1`}></i>
                   {item.label}
-                </button>
+                </a>
               </li>
             ))}
           </ul>

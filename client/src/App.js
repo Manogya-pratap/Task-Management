@@ -6,15 +6,17 @@ import {
 } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
+import { SocketProvider } from "./contexts/SocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginForm from "./components/LoginForm";
 import Layout from "./components/Layout";
 import MDDashboard from "./components/dashboards/MDDashboard";
 import TeamLeadDashboard from "./components/dashboards/TeamLeadDashboard";
 import EmployeeDashboard from "./components/dashboards/EmployeeDashboard";
-import TaskBoard from "./components/TaskBoard";
+import KanbanPage from "./pages/KanbanPage";
+import ApprovalsPage from "./pages/ApprovalsPage";
+import DailyLogsPage from "./pages/DailyLogsPage";
 import TaskCalendar from "./components/calendar/TaskCalendar";
-import ProjectTimeline from "./components/timeline/ProjectTimeline";
 import TeamManagement from "./components/management/TeamManagement";
 import UserManagement from "./components/management/UserManagement";
 import ProjectManagement from "./components/management/ProjectManagement";
@@ -29,10 +31,10 @@ import Settings from "./components/settings/Settings";
 import AuditLogs from "./components/audit/AuditLogs";
 import ErrorBoundary, {
   DashboardErrorBoundary,
-  TaskBoardErrorBoundary,
 } from "./components/ErrorBoundary";
 import { PageLoader } from "./components/LoadingSpinner";
 import NotificationSystem from "./components/NotificationSystem";
+import NotificationToast from "./components/notifications/NotificationToast";
 import "./App.css";
 import "./styles/responsive.css";
 
@@ -99,13 +101,37 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/tasks"
+        path="/progressboard"
         element={
           <ProtectedRoute>
             <Layout>
-              <TaskBoardErrorBoundary>
-                <TaskBoard />
-              </TaskBoardErrorBoundary>
+              <ErrorBoundary>
+                <KanbanPage />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/approvals"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <ApprovalsPage />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/daily-logs"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <DailyLogsPage />
+              </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
         }
@@ -129,18 +155,6 @@ const AppContent = () => {
             <Layout>
               <ErrorBoundary>
                 <TaskCalendar />
-              </ErrorBoundary>
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/timeline"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ErrorBoundary>
-                <ProjectTimeline />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
@@ -243,30 +257,6 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/team-timeline"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ErrorBoundary>
-                <ProjectTimeline />
-              </ErrorBoundary>
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/my-timeline"
-        element={
-          <ProtectedRoute>
-            <Layout>
-              <ErrorBoundary>
-                <ProjectTimeline />
-              </ErrorBoundary>
-            </Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
         path="/team-reports"
         element={
           <ProtectedRoute>
@@ -353,10 +343,13 @@ function App() {
     <ErrorBoundary>
       <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <AuthProvider>
-          <AppProvider>
-            <AppContent />
-            <NotificationSystem />
-          </AppProvider>
+          <SocketProvider>
+            <AppProvider>
+              <AppContent />
+              <NotificationSystem />
+              <NotificationToast />
+            </AppProvider>
+          </SocketProvider>
         </AuthProvider>
       </Router>
     </ErrorBoundary>

@@ -2,13 +2,18 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
 const userSchema = new mongoose.Schema({
-  username: {
+  unique_id: {
     type: String,
-    required: [true, 'Username is required'],
+    required: [true, 'Unique ID is required'],
     unique: true,
     trim: true,
-    minlength: [3, 'Username must be at least 3 characters long'],
-    maxlength: [30, 'Username cannot exceed 30 characters']
+    uppercase: true
+  },
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true,
+    maxlength: [100, 'Name cannot exceed 100 characters']
   },
   email: {
     type: String,
@@ -23,39 +28,34 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Password is required'],
     minlength: [6, 'Password must be at least 6 characters long']
   },
-  firstName: {
-    type: String,
-    required: [true, 'First name is required'],
-    trim: true,
-    maxlength: [50, 'First name cannot exceed 50 characters']
-  },
-  lastName: {
-    type: String,
-    required: [true, 'Last name is required'],
-    trim: true,
-    maxlength: [50, 'Last name cannot exceed 50 characters']
-  },
   role: {
     type: String,
     required: [true, 'Role is required'],
     enum: {
-      values: ['managing_director', 'it_admin', 'team_lead', 'employee'],
-      message: 'Role must be one of: managing_director, it_admin, team_lead, employee'
+      values: ['ADMIN', 'MD', 'TEAM_LEAD', 'EMPLOYEE', 'managing_director', 'it_admin', 'team_lead', 'employee'],
+      message: 'Role must be one of: ADMIN, MD, TEAM_LEAD, EMPLOYEE, managing_director, it_admin, team_lead, employee'
     },
-    default: 'employee'
+    default: 'EMPLOYEE'
   },
-  department: {
-    type: String,
-    required: [true, 'Department is required'],
-    trim: true,
-    maxlength: [100, 'Department name cannot exceed 100 characters']
+  dept_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: function() {
+      const role = (this.role || '').toLowerCase();
+      // Admin, MD, managing_director, and it_admin don't require department
+      return role !== 'admin' && 
+             role !== 'md' && 
+             role !== 'managing_director' && 
+             role !== 'it_admin';
+    },
+    default: null
   },
-  teamId: {
+  team_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Team',
     default: null
   },
-  isActive: {
+  is_active: {
     type: Boolean,
     default: true
   },
@@ -66,7 +66,14 @@ const userSchema = new mongoose.Schema({
   passwordChangedAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  // Legacy fields for backward compatibility (will be removed later)
+  username: String,
+  firstName: String,
+  lastName: String,
+  department: String,
+  teamId: mongoose.Schema.Types.ObjectId,
+  isActive: Boolean
 }, {
   timestamps: true,
   toJSON: {
@@ -79,12 +86,35 @@ const userSchema = new mongoose.Schema({
 });
 
 // Indexes for performance
-userSchema.index({ username: 1 });
+userSchema.index({ unique_id: 1 });
 userSchema.index({ email: 1 });
 userSchema.index({ role: 1 });
-userSchema.index({ department: 1 });
-userSchema.index({ teamId: 1 });
-userSchema.index({ isActive: 1 });
+userSchema.index({ dept_id: 1 });
+userSchema.index({ team_id: 1 });
+userSchema.index({ is_active: 1 });
+
+// Pre-save middleware to normalize data
+userSchema.pre('save', async function(next) {
+  // Set name from firstName and lastName if not provided
+  if (!this.name && (this.firstName || this.lastName)) {
+    this.name = `${this.firstName || ''} ${this.lastName || ''}`.trim();
+  }
+  
+  // Set unique_id from username if not provided
+  if (!this.unique_id && this.username) {
+    this.unique_id = this.username.toUpperCase();
+  }
+  
+  // Sync legacy fields
+  if (this.isModified('isActive')) {
+    this.is_active = this.isActive;
+  }
+  if (this.isModified('is_active')) {
+    this.isActive = this.is_active;
+  }
+  
+  next();
+});
 
 // Pre-save middleware to hash password
 userSchema.pre('save', async function(next) {
@@ -125,49 +155,72 @@ userSchema.methods.changedPasswordAfter = function(JWTTimestamp) {
 
 // Instance method to get full name
 userSchema.methods.getFullName = function() {
-  return `${this.firstName} ${this.lastName}`;
+  return this.name || `${this.firstName || ''} ${this.lastName || ''}`.trim();
 };
 
 // Instance method to check if user has permission
 userSchema.methods.hasPermission = function(permission) {
+  // Normalize role to uppercase for comparison
+  let normalizedRole = (this.role || '').toUpperCase().replace(/-/g, '_');
+  
+  // Map 'managing_director' and 'it_admin' to their enum equivalents
+  if (normalizedRole === 'MANAGING_DIRECTOR') {
+    normalizedRole = 'MD';
+  } else if (normalizedRole === 'IT_ADMIN') {
+    normalizedRole = 'ADMIN';
+  }
+  
+  console.log('hasPermission check:', {
+    originalRole: this.role,
+    normalizedRole: normalizedRole,
+    permission: permission,
+    userId: this._id
+  });
+  
   const rolePermissions = {
-    managing_director: ['*'], // All permissions
-    it_admin: ['*'], // All permissions
-    team_lead: [
+    'ADMIN': ['*'], // All permissions (includes IT_ADMIN)
+    'MD': ['*'], // All permissions (includes MANAGING_DIRECTOR)
+    'TEAM_LEAD': [
       'view_team_data',
       'create_project',
-      'create_user', // Can create employees for their team
+      'create_user',
       'assign_tasks',
       'manage_team_members',
       'view_own_tasks',
       'update_task_status',
-      'view_assigned_projects'
+      'view_assigned_projects',
+      'approve_task_completion'
     ],
-    employee: [
+    'EMPLOYEE': [
       'view_own_tasks',
       'update_task_status',
-      'view_assigned_projects'
+      'view_assigned_projects',
+      'create_daily_update'
     ]
   };
 
-  const userPermissions = rolePermissions[this.role] || [];
+  const userPermissions = rolePermissions[normalizedRole] || [];
   
-  // Special handling for delete_user - only MDs can delete users
+  // Special handling for delete_user - only ADMIN and MD can delete users
   if (permission === 'delete_user') {
-    return this.role === 'managing_director';
+    const hasPermission = normalizedRole === 'ADMIN' || normalizedRole === 'MD';
+    console.log('delete_user permission result:', hasPermission);
+    return hasPermission;
   }
   
-  return userPermissions.includes('*') || userPermissions.includes(permission);
+  const result = userPermissions.includes('*') || userPermissions.includes(permission);
+  console.log('Permission result:', result);
+  return result;
 };
 
 // Static method to find users by role
 userSchema.statics.findByRole = function(role) {
-  return this.find({ role, isActive: true });
+  return this.find({ role, is_active: true });
 };
 
 // Static method to find users by department
-userSchema.statics.findByDepartment = function(department) {
-  return this.find({ department, isActive: true });
+userSchema.statics.findByDepartment = function(deptId) {
+  return this.find({ dept_id: deptId, is_active: true });
 };
 
 // Static method to create user with validation

@@ -1,33 +1,24 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
-import api from "../../services/api";
+import { useLazyDashboard } from "../../hooks/useLazyDashboard";
 import TaskCalendar from "../calendar/TaskCalendar";
-import TaskBoard from "../TaskBoard";
-import ProjectTimeline from "../timeline/ProjectTimeline";
 import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import PulseTest from "../shared/PulseTest";
 import { ComponentLoader } from "../LoadingSpinner";
-import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
 
 const MDDashboard = () => {
   const { getUserFullName } = useAuth();
-  const {
-    projects,
-    tasks,
-    teams,
-    loading,
-    errors,
-    fetchAllData,
-    addNotification,
-  } = useApp();
+  const { addNotification } = useApp();
+  const { projects, tasks, teams, loadingStatus, initializeDashboard } =
+    useLazyDashboard();
 
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
 
   useEffect(() => {
-    // Fetch all data when component mounts
-    fetchAllData(true); // Force refresh for dashboard
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    // Initialize dashboard with lazy loading
+    initializeDashboard();
+  }, [initializeDashboard]);
 
   const getProjectStatusColor = (status) => {
     const colors = {
@@ -50,9 +41,12 @@ const MDDashboard = () => {
   };
 
   // Check if data is available
-  if (!projects || !tasks || !teams) {
-    console.log("MDDashboard: Data not available", { projects, tasks, teams });
-    return <ComponentLoader text="Loading company dashboard..." />;
+  if (!projects && !loadingStatus.hasData) {
+    console.log("MDDashboard: No data available yet", {
+      projects,
+      loadingStatus,
+    });
+    return <ComponentLoader text="Initializing company dashboard..." />;
   }
 
   // Check if data arrays are empty but not loading
@@ -60,10 +54,8 @@ const MDDashboard = () => {
     projects.length === 0 &&
     tasks.length === 0 &&
     teams.length === 0 &&
-    !loading.global &&
-    !loading.projects &&
-    !loading.tasks &&
-    !loading.teams
+    !loadingStatus.isLoading &&
+    !loadingStatus.hasData
   ) {
     console.log("MDDashboard: No data found");
     return (
@@ -80,24 +72,15 @@ const MDDashboard = () => {
     );
   }
 
-  if (loading.global || loading.projects || loading.tasks || loading.teams) {
-    console.log("MDDashboard: Still loading", { loading });
+  // Show loading state while critical data is loading
+  if (loadingStatus.isLoading && !loadingStatus.criticalLoaded) {
+    console.log("MDDashboard: Still loading critical data", { loadingStatus });
     return <ComponentLoader text="Loading company dashboard..." />;
   }
 
-  if (errors.global || errors.projects || errors.tasks || errors.teams) {
-    const errorMessage =
-      errors.global || errors.projects || errors.tasks || errors.teams;
-    console.log("MDDashboard: Errors found", { errors });
-    return (
-      <div className="alert alert-danger" role="alert">
-        <h5 className="alert-heading">
-          <i className="fas fa-exclamation-triangle me-2"></i>
-          Error Loading Dashboard
-        </h5>
-        <p className="mb-0">{errorMessage}</p>
-      </div>
-    );
+  // Show partial loading state
+  if (loadingStatus.isPartiallyLoaded) {
+    console.log("MDDashboard: Partially loaded", { loadingStatus });
   }
 
   console.log("MDDashboard: Rendering with data", {
@@ -324,10 +307,26 @@ const MDDashboard = () => {
 
                 {/* Visual Progress Bar */}
                 <div className="mt-4">
-                  <h6 className="mb-3">Company-wide Task Progress</h6>
+                  <div className="d-flex justify-content-between align-items-center mb-3">
+                    <h6 className="mb-0">Company-wide Task Progress</h6>
+                    <div className="d-flex align-items-center">
+                      <AnimatedProgressBar
+                        value={overallCompletion}
+                        variant="success"
+                        height="8px"
+                        showLabel={true}
+                        showSyncStatus={true}
+                        dataType="all"
+                        className="me-3"
+                        style={{ minWidth: "200px" }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Multi-stage Progress Bar */}
                   <div
-                    className="progress-enhanced mb-2"
-                    style={{ height: "12px" }}
+                    className="progress-enhanced mb-3"
+                    style={{ height: "16px" }}
                   >
                     <div className="progress-multi-stage">
                       {taskStats.statusStats &&
@@ -342,15 +341,17 @@ const MDDashboard = () => {
                               className={`progress-stage progress-bar-animated bg-${getTaskStatusColor(stat._id)}`}
                               style={{
                                 width: `${percentage}%`,
-                                minWidth: percentage > 0 ? "20px" : "0",
+                                minWidth: percentage > 0 ? "30px" : "0",
+                                position: "relative",
                               }}
-                              title={`${stat._id}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
+                              title={`${stat._id.replace("_", " ")}: ${stat.count} tasks (${percentage.toFixed(1)}%)`}
                             >
-                              {percentage > 10 && (
-                                <span className="progress-bar-text">
+                              {percentage > 5 && (
+                                <span className="progress-stage-text">
                                   {stat.count}
                                 </span>
                               )}
+                              <div className="progress-stage-pulse" />
                             </div>
                           );
                         })}
@@ -358,9 +359,15 @@ const MDDashboard = () => {
                     {/* Sync Indicator */}
                     <div className="progress-sync-indicator" />
                   </div>
-                  <div className="d-flex justify-content-between small text-muted">
-                    <span>Task Distribution</span>
-                    <span>{totalTasks} Total Tasks</span>
+
+                  <div className="d-flex justify-content-between align-items-center">
+                    <div className="small text-muted">
+                      <i className="fas fa-chart-pie me-1"></i>
+                      Task Distribution by Status
+                    </div>
+                    <div className="small text-muted">
+                      <strong>{totalTasks}</strong> Total Tasks
+                    </div>
                   </div>
                 </div>
 
@@ -399,18 +406,6 @@ const MDDashboard = () => {
           </div>
         </div>
       )}
-
-      {/* Timeline Integration */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <ProjectTimeline
-            onTaskClick={(task) => {
-              console.log("Timeline task clicked:", task);
-              // Add task detail modal or navigation here
-            }}
-          />
-        </div>
-      </div>
 
       {/* Recent Projects and Teams */}
       <div className="row mb-4">

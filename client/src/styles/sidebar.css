@@ -188,16 +188,19 @@
   margin-top: auto;
   padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
 }
 
 .user-profile {
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
 }
 
 .sidebar-header {
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
 }
 
 /* Responsive Sidebar Styles */

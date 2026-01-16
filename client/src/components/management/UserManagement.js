@@ -139,7 +139,7 @@ const UserManagement = () => {
   };
 
   const handleDelete = async (userId) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Are you sure you want to deactivate this user? They can be reactivated later.")) return;
 
     setLoading(true);
     try {
@@ -150,10 +150,58 @@ const UserManagement = () => {
         await fetchUsers(true); // Force refresh
       }, 100);
 
-      setSuccess("User deleted successfully!");
+      setSuccess("User deactivated successfully!");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to delete user");
+      setError(err.response?.data?.message || "Failed to deactivate user");
+      setTimeout(() => setError(null), 3000);
+      // Refresh users even on error to ensure UI consistency
+      fetchUsers(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePermanentDelete = async (userId) => {
+    if (!window.confirm("⚠️ WARNING: This will PERMANENTLY delete the user and all their data. This action CANNOT be undone!\n\nAre you absolutely sure?")) return;
+
+    setLoading(true);
+    try {
+      await api.delete(`/users/${userId}/permanent`);
+
+      // Force refresh with a slight delay to ensure backend processes the deletion
+      setTimeout(async () => {
+        await fetchUsers(true); // Force refresh
+      }, 100);
+
+      setSuccess("User permanently deleted!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to delete user permanently");
+      setTimeout(() => setError(null), 3000);
+      // Refresh users even on error to ensure UI consistency
+      fetchUsers(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleReactivate = async (userId) => {
+    if (!window.confirm("Are you sure you want to reactivate this user?")) return;
+
+    setLoading(true);
+    try {
+      await api.patch(`/users/${userId}/reactivate`);
+
+      // Force refresh with a slight delay to ensure backend processes the reactivation
+      setTimeout(async () => {
+        await fetchUsers(true); // Force refresh
+      }, 100);
+
+      setSuccess("User reactivated successfully!");
+      setTimeout(() => setSuccess(null), 3000);
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to reactivate user");
       setTimeout(() => setError(null), 3000);
       // Refresh users even on error to ensure UI consistency
       fetchUsers(true);
@@ -280,14 +328,47 @@ const UserManagement = () => {
                         >
                           <i className="fas fa-edit"></i>
                         </Button>
-                        <Button
-                          variant="outline-danger"
-                          size="sm"
-                          onClick={() => handleDelete(userItem._id)}
-                          disabled={userItem._id === user._id}
-                        >
-                          <i className="fas fa-trash"></i>
-                        </Button>
+                        {userItem.isActive ? (
+                          <>
+                            <Button
+                              variant="outline-warning"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => handleDelete(userItem._id)}
+                              title="Deactivate user (can be reactivated)"
+                            >
+                              <i className="fas fa-ban"></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handlePermanentDelete(userItem._id)}
+                              title="Delete permanently (cannot be undone)"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button
+                              variant="outline-success"
+                              size="sm"
+                              className="me-2"
+                              onClick={() => handleReactivate(userItem._id)}
+                              title="Reactivate user"
+                            >
+                              <i className="fas fa-undo"></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handlePermanentDelete(userItem._id)}
+                              title="Delete permanently (cannot be undone)"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </Button>
+                          </>
+                        )}
                       </td>
                     )}
                   </tr>

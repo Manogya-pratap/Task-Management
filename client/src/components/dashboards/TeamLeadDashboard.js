@@ -3,7 +3,6 @@ import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
 import api from "../../services/api";
 import TaskCalendar from "../calendar/TaskCalendar";
-import TaskBoard from "../TaskBoard";
 import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import { ComponentLoader } from "../LoadingSpinner";
 import { Modal, Button, Form, Alert, Row, Col } from "react-bootstrap";
@@ -812,34 +811,6 @@ const TeamLeadDashboard = () => {
                   ))}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Team Task Board */}
-      <div className="row mb-4">
-        <div className="col-12">
-          <div className="card border-0 shadow-sm">
-            <div className="card-header bg-white border-0 pb-0">
-              <div className="d-flex justify-content-between align-items-center">
-                <h5 className="card-title mb-0">
-                  <i className="fas fa-tasks me-2 text-primary"></i>
-                  {userTeam ? `${userTeam.name} Team Board` : "Team Task Board"}
-                </h5>
-                <a
-                  href="/team-tasks"
-                  className="btn btn-sm btn-outline-primary"
-                >
-                  Full Board View
-                </a>
-              </div>
-            </div>
-            <div className="card-body p-0">
-              <TaskBoard
-                projectId={null} // Show all team tasks
-                className="team-task-board"
-              />
             </div>
           </div>
         </div>

@@ -112,16 +112,16 @@ const Layout = ({ children }) => {
               description: "View and manage all projects",
             },
             {
-              label: "Task Board",
-              icon: "fas fa-tasks",
-              href: "/tasks",
-              description: "Assign and track tasks",
+              label: "Progress Board",
+              icon: "fas fa-columns",
+              href: "/progressboard",
+              description: "Drag-and-drop task management",
             },
             {
-              label: "Timeline View",
-              icon: "fas fa-calendar-alt",
-              href: "/timeline",
-              description: "Project timelines and schedules",
+              label: "Daily Logs",
+              icon: "fas fa-clipboard-list",
+              href: "/daily-logs",
+              description: "View daily task updates",
             },
             {
               label: "Calendar",
@@ -203,16 +203,16 @@ const Layout = ({ children }) => {
               description: "Manage team projects",
             },
             {
-              label: "Task Board",
-              icon: "fas fa-tasks",
-              href: "/team-tasks",
-              description: "Assign tasks to team members",
+              label: "Progress Board",
+              icon: "fas fa-columns",
+              href: "/progressboard",
+              description: "Drag-and-drop task management",
             },
             {
-              label: "Timeline",
-              icon: "fas fa-calendar-alt",
-              href: "/team-timeline",
-              description: "Team project timelines",
+              label: "Daily Logs",
+              icon: "fas fa-clipboard-list",
+              href: "/daily-logs",
+              description: "View team daily updates",
             },
             {
               label: "Calendar",
@@ -258,6 +258,18 @@ const Layout = ({ children }) => {
               href: "/my-projects",
               description: "Projects I'm involved in",
             },
+            {
+              label: "Progress Board",
+              icon: "fas fa-columns",
+              href: "/progressboard",
+              description: "Manage tasks visually",
+            },
+            {
+              label: "Daily Logs",
+              icon: "fas fa-clipboard-check",
+              href: "/daily-logs",
+              description: "My daily task updates",
+            },
           ],
         },
         {
@@ -268,12 +280,6 @@ const Layout = ({ children }) => {
               icon: "fas fa-calendar",
               href: "/calendar",
               description: "My schedule and deadlines",
-            },
-            {
-              label: "Timeline",
-              icon: "fas fa-clock",
-              href: "/my-timeline",
-              description: "My task timeline",
             },
           ],
         }
@@ -409,7 +415,9 @@ const Layout = ({ children }) => {
                   {getUserFullName()}
                 </div>
                 <small className="text-white opacity-75 text-capitalize">
-                  {user?.role?.replace("_", " ")}
+                  {user?.role === 'managing_director' ? 'Admin' : 
+                   user?.role === 'it_admin' ? 'IT Admin' :
+                   user?.role?.replace("_", " ")}
                 </small>
               </div>
             )}

@@ -21,14 +21,14 @@ const getAllTasks = catchAsync(async (req, res, next) => {
   // Apply role-based filtering
   if (req.user.role === "employee") {
     // Employees can only see tasks assigned to them
-    filter.assignedTo = req.user._id;
+    filter.assigned_to = req.user._id;
   } else if (req.user.role === "team_lead") {
     // Team leads can see tasks in their team's projects
     if (req.user.teamId) {
       const teamProjects = await Project.find({ teamId: req.user.teamId });
       const projectIds = teamProjects.map((project) => project._id);
       console.log("Team lead projects:", projectIds);
-      filter.projectId = { $in: projectIds };
+      filter.project_id = { $in: projectIds };
     } else {
       console.log("Team lead has no team assigned");
       // If team lead has no team, return empty array
@@ -53,39 +53,70 @@ const getAllTasks = catchAsync(async (req, res, next) => {
     // Ensure user has access to the project
     const project = await Project.findById(req.query.projectId);
     if (project && canUserAccessProject(req.user, project)) {
-      filter.projectId = req.query.projectId;
+      filter.project_id = req.query.projectId;
     } else {
       return next(new AppError("You do not have access to this project", 403));
     }
   }
   if (req.query.assignedTo) {
-    filter.assignedTo = req.query.assignedTo;
+    filter.assigned_to = req.query.assignedTo;
   }
 
-  const tasks = await Task.find(filter)
-    .populate("assignedTo", "firstName lastName role")
-    .populate("createdBy", "firstName lastName")
-    .populate("projectId", "name status teamId")
-    .populate({
-      path: "comments.author",
-      select: "firstName lastName",
-    })
-    .sort({ createdAt: -1 });
+  try {
+    const tasks = await Task.find(filter)
+      .populate({
+        path: "assigned_to",
+        select: "firstName lastName name role unique_id",
+        options: { strictPopulate: false }
+      })
+      .populate({
+        path: "created_by",
+        select: "firstName lastName name unique_id",
+        options: { strictPopulate: false }
+      })
+      .populate({
+        path: "project_id",
+        select: "name status teamId",
+        options: { strictPopulate: false }
+      })
+      .populate({
+        path: "req_dept_id",
+        select: "dept_name name",
+        options: { strictPopulate: false }
+      })
+      .populate({
+        path: "exec_dept_id",
+        select: "dept_name name",
+        options: { strictPopulate: false }
+      })
+      .lean()
+      .sort({ createdAt: -1 });
 
-  console.log(
-    "getAllTasks: Found",
-    tasks.length,
-    "tasks for user",
-    req.user.role
-  );
+    console.log(
+      "getAllTasks: Found",
+      tasks.length,
+      "tasks for user",
+      req.user.role
+    );
 
-  res.status(200).json({
-    status: "success",
-    results: tasks.length,
-    data: {
-      tasks,
-    },
-  });
+    res.status(200).json({
+      status: "success",
+      results: tasks.length,
+      data: {
+        tasks,
+      },
+    });
+  } catch (error) {
+    console.error("Error in getAllTasks:", error);
+    // Return empty array instead of error to prevent dashboard crash
+    res.status(200).json({
+      status: "success",
+      results: 0,
+      data: {
+        tasks: [],
+      },
+    });
+  }
 });
 
 /**

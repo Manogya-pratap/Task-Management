@@ -35,11 +35,22 @@ router.post(
 // Update user
 router.patch("/:id", validateUserUpdate, userController.updateUser);
 
-// Delete user (MD only)
+// Delete user (ADMIN and MD only) - Soft delete
 router.delete(
   "/:id",
-  requirePermission("delete_user"),
   userController.deleteUser
+);
+
+// Permanently delete user (ADMIN and MD only) - Hard delete
+router.delete(
+  "/:id/permanent",
+  userController.permanentDeleteUser
+);
+
+// Reactivate user (ADMIN and MD only)
+router.patch(
+  "/:id/reactivate",
+  userController.reactivateUser
 );
 
 // Export user data

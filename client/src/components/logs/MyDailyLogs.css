@@ -1,0 +1,161 @@
+.my-daily-logs {
+  padding: 20px;
+}
+
+.logs-header {
+  margin-bottom: 30px;
+}
+
+.logs-header h4 {
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.date-selector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+}
+
+.date-input {
+  max-width: 200px;
+  text-align: center;
+}
+
+.logs-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.stat-card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.stat-card .card-body {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+}
+
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: white;
+}
+
+.stat-content h3 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-content p {
+  margin: 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.log-card {
+  border-left: 4px solid #007bff;
+  transition: all 0.2s ease;
+}
+
+.log-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateX(5px);
+}
+
+.log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.log-header h6 {
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.log-remark {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+.log-remark p {
+  margin: 0;
+  color: #333;
+  line-height: 1.6;
+}
+
+.log-footer {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.log-meta {
+  display: flex;
+  gap: 20px;
+  font-size: 13px;
+  color: #666;
+}
+
+.log-meta span {
+  display: flex;
+  align-items: center;
+}
+
+.log-meta i {
+  color: #007bff;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .my-daily-logs {
+    padding: 15px;
+  }
+
+  .logs-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .date-selector {
+    flex-wrap: wrap;
+  }
+
+  .date-input {
+    max-width: 100%;
+    order: -1;
+    width: 100%;
+  }
+
+  .log-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

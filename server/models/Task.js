@@ -12,121 +12,94 @@ const taskSchema = new mongoose.Schema({
     trim: true,
     maxlength: [1000, 'Description cannot exceed 1000 characters']
   },
-  status: {
-    type: String,
-    required: [true, 'Task status is required'],
-    enum: {
-      values: ['new', 'scheduled', 'in_progress', 'completed'],
-      message: 'Status must be one of: new, scheduled, in_progress, completed'
-    },
-    default: 'new'
-  },
-  priority: {
-    type: String,
-    enum: {
-      values: ['low', 'medium', 'high', 'urgent'],
-      message: 'Priority must be one of: low, medium, high, urgent'
-    },
-    default: 'medium'
-  },
-  assignedTo: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    default: null
-  },
-  projectId: {
+  project_id: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Project',
     required: [true, 'Project assignment is required']
   },
-  createdBy: {
+  assigned_to: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Task must be assigned to a user']
+  },
+  req_dept_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: [true, 'Requesting department is required']
+  },
+  exec_dept_id: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Department',
+    required: [true, 'Executing department is required']
+  },
+  created_by: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: [true, 'Creator is required']
   },
-  scheduledDate: {
-    type: Date,
-    default: null,
-    validate: {
-      validator: function(value) {
-        // If status is scheduled, scheduledDate is required
-        if (this.status === 'scheduled' && !value) {
-          return false;
-        }
-        return true;
-      },
-      message: 'Scheduled date is required when status is scheduled'
-    }
+  status: {
+    type: String,
+    required: [true, 'Task status is required'],
+    enum: {
+      values: ['Pending', 'In Progress', 'Review', 'Done'],
+      message: 'Status must be one of: Pending, In Progress, Review, Done'
+    },
+    default: 'Pending'
   },
-  startDate: {
+  kanban_stage: {
+    type: String,
+    required: [true, 'Kanban stage is required'],
+    enum: {
+      values: ['Backlog', 'Todo', 'In Progress', 'Review', 'Done'],
+      message: 'Kanban stage must be one of: Backlog, Todo, In Progress, Review, Done'
+    },
+    default: 'Backlog'
+  },
+  progress: {
+    type: Number,
+    min: [0, 'Progress cannot be negative'],
+    max: [100, 'Progress cannot exceed 100'],
+    default: 0
+  },
+  priority: {
+    type: String,
+    enum: {
+      values: ['Low', 'Medium', 'High', 'Urgent'],
+      message: 'Priority must be one of: Low, Medium, High, Urgent'
+    },
+    default: 'Medium'
+  },
+  remark: {
+    type: String,
+    trim: true,
+    maxlength: [500, 'Remark cannot exceed 500 characters']
+  },
+  due_date: {
     type: Date,
     default: null
   },
-  dueDate: {
-    type: Date,
-    default: null,
-    validate: {
-      validator: function(value) {
-        if (value && this.startDate) {
-          return value >= this.startDate;
-        }
-        return true;
-      },
-      message: 'Due date must be after start date'
-    }
-  },
-  completedDate: {
+  start_date: {
     type: Date,
     default: null
   },
-  estimatedHours: {
+  completed_date: {
+    type: Date,
+    default: null
+  },
+  estimated_hours: {
     type: Number,
     min: [0, 'Estimated hours cannot be negative'],
     default: 0
   },
-  actualHours: {
-    type: Number,
-    min: [0, 'Actual hours cannot be negative'],
-    default: 0
-  },
-  tags: [{
-    type: String,
-    trim: true,
-    maxlength: [50, 'Tag cannot exceed 50 characters']
-  }],
-  attachments: [{
-    filename: String,
-    originalName: String,
-    mimetype: String,
-    size: Number,
-    uploadedAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  comments: [{
-    author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
-      required: true
-    },
-    content: {
-      type: String,
-      required: true,
-      maxlength: [500, 'Comment cannot exceed 500 characters']
-    },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }],
-  // Color coding for status visualization
-  statusColor: {
-    type: String,
-    default: function() {
-      return this.getStatusColor();
-    }
-  }
+  // Legacy fields for backward compatibility
+  projectId: mongoose.Schema.Types.ObjectId,
+  assignedTo: mongoose.Schema.Types.ObjectId,
+  createdBy: mongoose.Schema.Types.ObjectId,
+  dueDate: Date,
+  startDate: Date,
+  completedDate: Date,
+  estimatedHours: Number,
+  actualHours: Number
 }, {
   timestamps: true,
   toJSON: {
@@ -140,113 +113,150 @@ const taskSchema = new mongoose.Schema({
 // Indexes for performance
 taskSchema.index({ title: 1 });
 taskSchema.index({ status: 1 });
+taskSchema.index({ kanban_stage: 1 });
 taskSchema.index({ priority: 1 });
-taskSchema.index({ assignedTo: 1 });
-taskSchema.index({ projectId: 1 });
-taskSchema.index({ createdBy: 1 });
-taskSchema.index({ scheduledDate: 1 });
-taskSchema.index({ dueDate: 1 });
-taskSchema.index({ tags: 1 });
-taskSchema.index({ 'comments.author': 1 });
+taskSchema.index({ assigned_to: 1 });
+taskSchema.index({ project_id: 1 });
+taskSchema.index({ created_by: 1 });
+taskSchema.index({ req_dept_id: 1 });
+taskSchema.index({ exec_dept_id: 1 });
+taskSchema.index({ due_date: 1 });
 
 // Virtual for overdue status
 taskSchema.virtual('isOverdue').get(function() {
-  return this.dueDate && this.dueDate < new Date() && this.status !== 'completed';
+  return this.due_date && this.due_date < new Date() && this.kanban_stage !== 'Done';
 });
 
 // Virtual for days remaining
 taskSchema.virtual('daysRemaining').get(function() {
-  if (this.dueDate) {
+  if (this.due_date) {
     const today = new Date();
-    const diffTime = this.dueDate - today;
+    const diffTime = this.due_date - today;
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   }
   return null;
 });
 
-// Virtual for duration in days
-taskSchema.virtual('durationDays').get(function() {
-  if (this.startDate && this.completedDate) {
-    const diffTime = Math.abs(this.completedDate - this.startDate);
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  }
-  return null;
+// Virtual to check if cross-department task
+taskSchema.virtual('isCrossDepartment').get(function() {
+  return !this.req_dept_id.equals(this.exec_dept_id);
 });
 
 // Instance method to get status color for visual indicators
 taskSchema.methods.getStatusColor = function() {
-  const statusColors = {
-    'new': '#6c757d',        // Gray - New tasks
-    'scheduled': '#007bff',   // Blue - Scheduled tasks
-    'in_progress': '#ffc107', // Yellow/Amber - In progress tasks
-    'completed': '#28a745'    // Green - Completed tasks
+  const stageColors = {
+    'Backlog': '#6c757d',      // Gray
+    'Todo': '#007bff',         // Blue
+    'In Progress': '#ffc107',  // Yellow/Amber
+    'Review': '#fd7e14',       // Orange
+    'Done': '#28a745'          // Green
   };
-  return statusColors[this.status] || '#6c757d';
+  return stageColors[this.kanban_stage] || '#6c757d';
 };
 
-// Instance method to update status with automatic date handling
-taskSchema.methods.updateStatus = async function(newStatus) {
-  const oldStatus = this.status;
-  this.status = newStatus;
+// Instance method to move task in Kanban board
+taskSchema.methods.moveToStage = async function(newStage, userId) {
+  const oldStage = this.kanban_stage;
   
-  // Handle automatic date updates based on status changes
-  switch (newStatus) {
-    case 'scheduled':
-      if (!this.scheduledDate) {
-        this.scheduledDate = new Date();
-      }
-      break;
-    case 'in_progress':
-      if (!this.startDate) {
-        this.startDate = new Date();
-      }
-      break;
-    case 'completed':
-      if (!this.completedDate) {
-        this.completedDate = new Date();
-      }
-      break;
+  // Validate stage transition
+  if (oldStage === 'Review' && newStage === 'Done') {
+    // Only Team Lead, MD, or ADMIN can approve
+    const User = mongoose.model('User');
+    const user = await User.findById(userId);
+    if (!['TEAM_LEAD', 'MD', 'ADMIN'].includes(user.role)) {
+      throw new Error('Only Team Lead can approve task completion');
+    }
   }
   
-  // Update status color
-  this.statusColor = this.getStatusColor();
+  this.kanban_stage = newStage;
   
-  return await this.save();
+  // Update status based on stage
+  const stageToStatus = {
+    'Backlog': 'Pending',
+    'Todo': 'Pending',
+    'In Progress': 'In Progress',
+    'Review': 'Review',
+    'Done': 'Done'
+  };
+  this.status = stageToStatus[newStage];
+  
+  // Update dates
+  if (newStage === 'In Progress' && !this.start_date) {
+    this.start_date = new Date();
+  }
+  if (newStage === 'Done' && !this.completed_date) {
+    this.completed_date = new Date();
+    this.progress = 100;
+  }
+  
+  // Save with validateModifiedOnly to avoid validating unchanged required fields
+  await this.save({ validateModifiedOnly: true });
+  return { oldStage, newStage };
 };
 
-// Instance method to add comment
-taskSchema.methods.addComment = async function(authorId, content) {
-  this.comments.push({
-    author: authorId,
-    content: content
+// Instance method to update progress
+taskSchema.methods.updateProgress = async function(newProgress, userId, remark) {
+  this.progress = newProgress;
+  
+  // Create task log entry
+  const TaskLog = mongoose.model('TaskLog');
+  await TaskLog.create({
+    task_id: this._id,
+    updated_by: userId,
+    progress: newProgress,
+    remark: remark || 'Progress updated'
   });
-  return await this.save();
+  
+  // Save with validateModifiedOnly to avoid validating unchanged required fields
+  await this.save({ validateModifiedOnly: true });
+  return this;
 };
 
 // Instance method to check if user can access task
 taskSchema.methods.canUserAccess = function(user) {
-  // MD and IT_Admin can access all tasks
-  if (user.role === 'managing_director' || user.role === 'it_admin') {
+  // MD and ADMIN can access all tasks
+  if (user.role === 'MD' || user.role === 'ADMIN') {
+    return true;
+  }
+  
+  // Normalize role for comparison
+  const userRole = (user.role || '').toUpperCase().replace('_', '_');
+  
+  // Team Lead can access all tasks (they manage their team)
+  if (userRole === 'TEAM_LEAD' || userRole === 'TEAMLEAD') {
     return true;
   }
   
   // Task creator can access
-  if (this.createdBy.equals(user._id)) {
+  if (this.created_by && this.created_by.equals(user._id)) {
     return true;
   }
   
   // Assigned user can access
-  if (this.assignedTo && this.assignedTo.equals(user._id)) {
+  if (this.assigned_to && this.assigned_to.equals(user._id)) {
     return true;
   }
   
-  // Team leads can access tasks in their team's projects
-  if (user.role === 'team_lead' && user.teamId) {
-    // This would need to be populated with project and team data
-    return true; // Simplified for now
+  // Users from requesting or executing department can access
+  if (user.dept_id && this.req_dept_id && user.dept_id.equals(this.req_dept_id)) {
+    return true;
+  }
+  
+  if (user.dept_id && this.exec_dept_id && user.dept_id.equals(this.exec_dept_id)) {
+    return true;
   }
   
   return false;
+};
+
+// Static method to find tasks by Kanban stage
+taskSchema.statics.findByKanbanStage = function(stage, filter = {}) {
+  return this.find({ ...filter, kanban_stage: stage })
+    .populate('assigned_to', 'name unique_id')
+    .populate('created_by', 'name unique_id')
+    .populate('project_id', 'name')
+    .populate('req_dept_id', 'dept_name')
+    .populate('exec_dept_id', 'dept_name');
 };
 
 // Static method to find tasks by status

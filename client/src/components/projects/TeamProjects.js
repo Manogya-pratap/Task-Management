@@ -13,9 +13,23 @@ const TeamProjects = () => {
 
   useEffect(() => {
     // Fetch teams and projects if not already loaded
-    if (!teams.length) fetchTeams();
-    if (!projects.length) fetchProjects();
-  }, [fetchTeams, fetchProjects, teams.length, projects.length]);
+    // Use a ref to prevent infinite loops
+    let isMounted = true;
+    
+    const loadData = async () => {
+      if (isMounted) {
+        if (!teams.length) await fetchTeams();
+        if (!projects.length) await fetchProjects();
+      }
+    };
+    
+    loadData();
+    
+    return () => {
+      isMounted = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount
 
   useEffect(() => {
     // Filter projects based on user's team

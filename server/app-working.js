@@ -87,6 +87,30 @@ try {
   console.error("❌ Error loading reports routes:", error.message);
 }
 
+try {
+  const departmentRoutes = require("./routes/departments");
+  app.use("/api/departments", departmentRoutes);
+  console.log("✅ Department routes loaded");
+} catch (error) {
+  console.error("❌ Error loading department routes:", error.message);
+}
+
+try {
+  const taskLogRoutes = require("./routes/taskLogs");
+  app.use("/api/task-logs", taskLogRoutes);
+  console.log("✅ Task Log routes loaded");
+} catch (error) {
+  console.error("❌ Error loading task log routes:", error.message);
+}
+
+try {
+  const kanbanRoutes = require("./routes/kanban");
+  app.use("/api/progressboard", kanbanRoutes);
+  console.log("✅ Progress board routes loaded");
+} catch (error) {
+  console.error("❌ Error loading kanban routes:", error.message);
+}
+
 // Basic health check route
 app.get("/api/health", (req, res) => {
   res.json({

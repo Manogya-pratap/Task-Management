@@ -2,9 +2,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useApp } from "../contexts/AppContext";
 
 // Synchronization configuration
-const SYNC_INTERVAL = 30000; // 30 seconds
+const SYNC_INTERVAL = 300000; // 5 minutes (reduced from 30 seconds)
 const CACHE_DURATION = 300000; // 5 minutes
-const RETRY_DELAY = 5000; // 5 seconds
+const RETRY_DELAY = 10000; // 10 seconds
+const MAX_RETRIES = 2; // Reduced from 3
 
 export const useRealTimeSync = (dataType = "all", autoSync = true) => {
   const {
@@ -128,15 +129,21 @@ export const useRealTimeSync = (dataType = "all", autoSync = true) => {
         );
         setSyncStatus("error");
 
-        // Retry logic
-        if (retryCount < 3) {
+        // Retry logic with exponential backoff
+        if (retryCount < MAX_RETRIES) {
+          const backoffDelay = RETRY_DELAY * Math.pow(2, retryCount);
           console.log(
-            `🔄 Real-time sync: Retrying in ${RETRY_DELAY / 1000} seconds...`
+            `🔄 Real-time sync: Retrying in ${backoffDelay / 1000} seconds... (${retryCount + 1}/${MAX_RETRIES})`
           );
           retryTimeoutRef.current = setTimeout(() => {
             setRetryCount((prev) => prev + 1);
             syncData(force);
-          }, RETRY_DELAY);
+          }, backoffDelay);
+        } else {
+          console.error(
+            `❌ Real-time sync: Max retries reached for ${dataType}`
+          );
+          setSyncStatus("error");
         }
       } finally {
         setIsSyncing(false);
@@ -145,16 +152,28 @@ export const useRealTimeSync = (dataType = "all", autoSync = true) => {
     [dataType, fetchTasks, fetchProjects, fetchAllData, isSyncing, retryCount]
   );
 
+  // Check if data is fresh
+  const isDataFresh = useCallback(() => {
+    return (
+      lastSyncRef.current && Date.now() - lastSyncRef.current < CACHE_DURATION
+    );
+  }, []);
+
   // Auto-sync setup
   useEffect(() => {
     if (!autoSync) return;
 
-    // Initial sync
-    syncData(true);
+    // Initial sync only if data is not fresh
+    if (!isDataFresh()) {
+      syncData(true);
+    }
 
-    // Set up interval sync
+    // Set up interval sync with longer interval
     syncIntervalRef.current = setInterval(() => {
-      syncData();
+      // Only sync if not already syncing and data is not fresh
+      if (!isSyncing && !isDataFresh()) {
+        syncData();
+      }
     }, SYNC_INTERVAL);
 
     return () => {
@@ -165,7 +184,7 @@ export const useRealTimeSync = (dataType = "all", autoSync = true) => {
         clearTimeout(retryTimeoutRef.current);
       }
     };
-  }, [autoSync, syncData]);
+  }, [autoSync, syncData, isDataFresh, isSyncing]);
 
   // Manual sync trigger
   const manualSync = useCallback(() => {
@@ -188,13 +207,6 @@ export const useRealTimeSync = (dataType = "all", autoSync = true) => {
         return "Idle";
     }
   }, [syncStatus, lastSyncTime, retryCount]);
-
-  // Check if data is fresh
-  const isDataFresh = useCallback(() => {
-    return (
-      lastSyncRef.current && Date.now() - lastSyncRef.current < CACHE_DURATION
-    );
-  }, []);
 
   return {
     // Sync state

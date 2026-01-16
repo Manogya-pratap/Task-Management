@@ -14,6 +14,7 @@ const getAllUsers = async (req, res, next) => {
     if (req.user.role === "employee") {
       // Employees can only see themselves
       filter._id = req.user._id;
+      filter.isActive = true; // Only show active
     } else if (req.user.role === "team_lead") {
       // Team leads can see their team members
       const userTeam = await Team.findOne({ teamLead: req.user._id });
@@ -22,13 +23,14 @@ const getAllUsers = async (req, res, next) => {
       } else {
         filter._id = req.user._id;
       }
+      filter.isActive = true; // Only show active
     }
-    // MDs can see all users (no filter)
+    // MDs and IT Admins can see all users including inactive ones (no filter)
 
     const users = await User.find(filter)
       .select("-password -refreshTokens")
       .populate("teamId", "name department")
-      .sort({ createdAt: -1 });
+      .sort({ isActive: -1, createdAt: -1 }); // Show active users first
 
     // Log user access
     await logAuthEvent(
@@ -158,18 +160,24 @@ const createUser = async (req, res, next) => {
       return next(new AppError("Username or email already exists", 400));
     }
 
-    // Create user
-    const newUser = await User.create({
+    // Prepare user data with proper field mapping
+    const userData = {
       username,
       email,
       password,
       firstName,
       lastName,
+      name: `${firstName} ${lastName}`,
+      unique_id: username.toUpperCase(),
       role: role || "employee",
       department,
       teamId: req.body.teamId,
       isActive: true,
-    });
+      is_active: true
+    };
+
+    // Create user
+    const newUser = await User.create(userData);
 
     // Update team member count if assigned to team
     if (newUser.teamId) {
@@ -208,8 +216,14 @@ const updateUser = async (req, res, next) => {
     const { id } = req.params;
     const updates = req.body;
 
-    // Remove sensitive fields that shouldn't be updated via this endpoint
-    delete updates.password;
+    // Handle password separately if provided
+    let passwordUpdate = null;
+    if (updates.password && updates.password.trim() !== '') {
+      passwordUpdate = updates.password;
+      delete updates.password; // Remove from updates object
+    }
+    
+    // Remove other sensitive fields
     delete updates.refreshTokens;
 
     // Check permissions
@@ -244,23 +258,37 @@ const updateUser = async (req, res, next) => {
       }
     }
 
-    const user = await User.findByIdAndUpdate(id, updates, {
-      new: true,
-      runValidators: true,
-    })
-      .select("-password -refreshTokens")
-      .populate("teamId", "name department");
-
+    // Find user first
+    const user = await User.findById(id);
     if (!user) {
       return next(new AppError("User not found", 404));
     }
+
+    // Update fields
+    Object.keys(updates).forEach(key => {
+      user[key] = updates[key];
+    });
+
+    // Update password if provided (will be hashed by pre-save middleware)
+    if (passwordUpdate) {
+      user.password = passwordUpdate;
+    }
+
+    // Save user (triggers pre-save middleware for password hashing)
+    await user.save();
+
+    // Remove password from response
+    user.password = undefined;
+
+    // Populate related fields
+    await user.populate('teamId', 'name department');
 
     // Log user update
     await logAuthEvent(
       req,
       "USER_UPDATED",
       req.user._id,
-      `Updated user: ${user.username}`
+      `Updated user: ${user.username}${passwordUpdate ? ' (password changed)' : ''}`
     );
 
     res.status(200).json({
@@ -275,16 +303,39 @@ const updateUser = async (req, res, next) => {
 };
 
 /**
- * Delete user (MD only)
+ * Delete user (ADMIN and MD only)
  */
 const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
-    // Prevent self-deletion
-    if (req.user._id.toString() === id) {
-      return next(new AppError("You cannot delete your own account", 400));
+    // Normalize role and map to standard format
+    let userRole = (req.user.role || '').toUpperCase().replace(/-/g, '_');
+    
+    // Map 'managing_director' and 'it_admin' to their permission equivalents
+    if (userRole === 'MANAGING_DIRECTOR') {
+      userRole = 'MD';
+    } else if (userRole === 'IT_ADMIN') {
+      userRole = 'ADMIN';
     }
+
+    console.log('Delete user permission check:', {
+      originalRole: req.user.role,
+      normalizedRole: userRole,
+      userId: req.user._id,
+      targetUserId: id
+    });
+
+    // Check if user has permission to delete users
+    if (userRole !== 'ADMIN' && userRole !== 'MD') {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Only ADMIN or MD can delete users'
+      });
+    }
+
+    // Admin can delete any user, including themselves
+    // (Self-deletion restriction removed for admin flexibility)
 
     const user = await User.findById(id);
     if (!user) {
@@ -315,6 +366,127 @@ const deleteUser = async (req, res, next) => {
 
     res.status(204).json({
       status: "success",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Delete user permanently (ADMIN and MD only)
+ */
+const permanentDeleteUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Normalize role and map to standard format
+    let userRole = (req.user.role || '').toUpperCase().replace(/-/g, '_');
+    
+    // Map 'managing_director' and 'it_admin' to their permission equivalents
+    if (userRole === 'MANAGING_DIRECTOR') {
+      userRole = 'MD';
+    } else if (userRole === 'IT_ADMIN') {
+      userRole = 'ADMIN';
+    }
+
+    console.log('Permanent delete user permission check:', {
+      originalRole: req.user.role,
+      normalizedRole: userRole,
+      userId: req.user._id,
+      targetUserId: id
+    });
+
+    // Check if user has permission to delete users
+    if (userRole !== 'ADMIN' && userRole !== 'MD') {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Only ADMIN or MD can permanently delete users'
+      });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return next(new AppError("User not found", 404));
+    }
+
+    // Remove user from team
+    if (user.teamId) {
+      await Team.findByIdAndUpdate(user.teamId, {
+        $pull: { members: user._id },
+      });
+    }
+
+    // Hard delete - permanently remove from database
+    await User.findByIdAndDelete(id);
+
+    // Log user deletion
+    await logAuthEvent(
+      req,
+      "USER_PERMANENTLY_DELETED",
+      req.user._id,
+      `Permanently deleted user: ${user.username}`
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "User permanently deleted",
+      data: null,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Reactivate user (ADMIN and MD only)
+ */
+const reactivateUser = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Normalize role and map to standard format
+    let userRole = (req.user.role || '').toUpperCase().replace(/-/g, '_');
+    
+    // Map 'managing_director' and 'it_admin' to their permission equivalents
+    if (userRole === 'MANAGING_DIRECTOR') {
+      userRole = 'MD';
+    } else if (userRole === 'IT_ADMIN') {
+      userRole = 'ADMIN';
+    }
+
+    // Check if user has permission to reactivate users
+    if (userRole !== 'ADMIN' && userRole !== 'MD') {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Only ADMIN or MD can reactivate users'
+      });
+    }
+
+    const user = await User.findById(id);
+    if (!user) {
+      return next(new AppError("User not found", 404));
+    }
+
+    // Reactivate user
+    await User.findByIdAndUpdate(id, {
+      isActive: true,
+      reactivatedAt: new Date(),
+      reactivatedBy: req.user._id,
+      $unset: { deactivatedAt: 1, deactivatedBy: 1 }
+    });
+
+    // Log user reactivation
+    await logAuthEvent(
+      req,
+      "USER_REACTIVATED",
+      req.user._id,
+      `Reactivated user: ${user.username}`
+    );
+
+    res.status(200).json({
+      status: "success",
+      message: "User reactivated successfully",
       data: null,
     });
   } catch (error) {
@@ -379,5 +551,7 @@ module.exports = {
   createUser,
   updateUser,
   deleteUser,
+  permanentDeleteUser,
+  reactivateUser,
   exportUserData,
 };

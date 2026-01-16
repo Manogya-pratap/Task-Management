@@ -324,6 +324,9 @@ export const AppProvider = ({ children }) => {
   // Cache duration (5 minutes)
   const CACHE_DURATION = 5 * 60 * 1000;
 
+  // Debounce ref to prevent rapid API calls
+  const fetchDebounceRef = useRef(null);
+
   // Use refs to track last fetch times without causing re-renders
   const lastFetchRef = useRef({});
   const tasksLastFetchRef = useRef(null);
@@ -340,124 +343,171 @@ export const AppProvider = ({ children }) => {
   // Fetch projects
   const fetchProjects = useCallback(
     async (force = false) => {
-      if (!force && state.projects.length > 0) {
-        // Only fetch if it's been more than 5 minutes since last fetch
-        const lastFetch = state.lastFetch.projects;
-        if (lastFetch && Date.now() - lastFetch.getTime() < CACHE_DURATION) {
-          return;
-        }
+      // Clear any existing debounce
+      if (fetchDebounceRef.current) {
+        clearTimeout(fetchDebounceRef.current);
       }
 
-      try {
-        dispatch({
-          type: APP_ACTIONS.SET_LOADING,
-          payload: { key: "projects", value: true },
-        });
+      // Debounce the fetch call
+      return new Promise((resolve, reject) => {
+        fetchDebounceRef.current = setTimeout(async () => {
+          if (!force && state.projects.length > 0) {
+            // Only fetch if it's been more than 5 minutes since last fetch
+            const lastFetch = state.lastFetch.projects;
+            if (
+              lastFetch &&
+              Date.now() - lastFetch.getTime() < CACHE_DURATION
+            ) {
+              resolve(state.projects);
+              return;
+            }
+          }
 
-        let response;
-        const params = {};
+          try {
+            dispatch({
+              type: APP_ACTIONS.SET_LOADING,
+              payload: { key: "projects", value: true },
+            });
+            dispatch({
+              type: APP_ACTIONS.CLEAR_ERROR,
+              payload: { key: "projects" },
+            });
 
-        // Use role-specific endpoint for employees
-        if (user?.role === "employee") {
-          console.log("AppContext: Using /projects/my endpoint for employee");
-          response = await api.get("/projects/my", { params });
-        } else {
-          console.log(
-            "AppContext: Using /projects endpoint for admin/team lead"
-          );
-          response = await api.get("/projects", { params });
-        }
+            let response;
+            const params = {};
 
-        const projects =
-          response.data.data?.projects || response.data.projects || [];
-        console.log(
-          "AppContext: Fetched",
-          projects.length,
-          "projects for",
-          user?.role
-        );
+            // Use role-specific endpoint for employees
+            if (user?.role === "employee") {
+              console.log(
+                "AppContext: Using /projects/my endpoint for employee"
+              );
+              response = await api.get("/projects/my", { params });
+            } else {
+              console.log(
+                "AppContext: Using /projects endpoint for admin/team lead"
+              );
+              response = await api.get("/projects", { params });
+            }
 
-        dispatch({
-          type: APP_ACTIONS.SET_PROJECTS,
-          payload: projects,
-        });
-      } catch (error) {
-        console.error("AppContext: Error fetching projects:", error);
-        dispatch({
-          type: APP_ACTIONS.SET_ERROR,
-          payload: {
-            key: "projects",
-            value: error.response?.data?.message || "Failed to fetch projects",
-          },
-        });
-        dispatch({
-          type: APP_ACTIONS.SET_LOADING,
-          payload: { key: "projects", value: false },
-        });
-      }
+            const projects =
+              response.data.data?.projects || response.data.projects || [];
+            console.log(
+              "AppContext: Fetched",
+              projects.length,
+              "projects for",
+              user?.role
+            );
+
+            dispatch({
+              type: APP_ACTIONS.SET_PROJECTS,
+              payload: projects,
+            });
+
+            resolve(projects);
+          } catch (error) {
+            console.error("AppContext: Error fetching projects:", error);
+            dispatch({
+              type: APP_ACTIONS.SET_ERROR,
+              payload: {
+                key: "projects",
+                value:
+                  error.response?.data?.message || "Failed to fetch projects",
+              },
+            });
+            reject(error);
+          } finally {
+            dispatch({
+              type: APP_ACTIONS.SET_LOADING,
+              payload: { key: "projects", value: false },
+            });
+          }
+        }, 300); // 300ms debounce
+      });
     },
-    [user?.role]
+    [user?.role] // Removed state.projects.length to prevent infinite loops
   );
 
   const fetchTasks = useCallback(
     async (force = false, projectId = null) => {
-      if (!force && state.tasks.length > 0 && !projectId) {
-        // Only fetch if it's been more than 5 minutes since last fetch
-        const lastFetch = tasksLastFetchRef.current;
-        if (lastFetch && Date.now() - lastFetch < CACHE_DURATION) {
-          return;
-        }
+      // Clear any existing debounce
+      if (fetchDebounceRef.current) {
+        clearTimeout(fetchDebounceRef.current);
       }
 
-      try {
-        dispatch({
-          type: APP_ACTIONS.SET_LOADING,
-          payload: { key: "tasks", value: true },
-        });
+      // Debounce the fetch call
+      return new Promise((resolve, reject) => {
+        fetchDebounceRef.current = setTimeout(async () => {
+          if (!force && state.tasks.length > 0 && !projectId) {
+            // Only fetch if it's been more than 5 minutes since last fetch
+            const lastFetch = tasksLastFetchRef.current;
+            if (lastFetch && Date.now() - lastFetch < CACHE_DURATION) {
+              resolve(state.tasks);
+              return;
+            }
+          }
 
-        let response;
-        const params = projectId ? { projectId } : {};
+          try {
+            dispatch({
+              type: APP_ACTIONS.SET_LOADING,
+              payload: { key: "tasks", value: true },
+            });
+            dispatch({
+              type: APP_ACTIONS.CLEAR_ERROR,
+              payload: { key: "tasks" },
+            });
 
-        // Use role-specific endpoint for employees
-        if (user?.role === "employee" && !projectId) {
-          console.log("AppContext: Using /tasks/my endpoint for employee");
-          response = await api.get("/tasks/my", { params });
-        } else {
-          console.log("AppContext: Using /tasks endpoint for admin/team lead");
-          response = await api.get("/tasks", { params });
-        }
+            let response;
+            const params = projectId ? { projectId } : {};
 
-        const tasks = response.data.data?.tasks || response.data.tasks || [];
-        console.log(
-          "AppContext: Fetched",
-          tasks.length,
-          "tasks for",
-          user?.role
-        );
+            // Use role-specific endpoint for employees
+            if (user?.role === "employee" && !projectId) {
+              console.log("AppContext: Using /tasks/my endpoint for employee");
+              response = await api.get("/tasks/my", { params });
+            } else {
+              console.log(
+                "AppContext: Using /tasks endpoint for admin/team lead"
+              );
+              response = await api.get("/tasks", { params });
+            }
 
-        // Update the ref with current timestamp
-        tasksLastFetchRef.current = Date.now();
+            const tasks =
+              response.data.data?.tasks || response.data.tasks || [];
+            console.log(
+              "AppContext: Fetched",
+              tasks.length,
+              "tasks for",
+              user?.role
+            );
 
-        dispatch({
-          type: APP_ACTIONS.SET_TASKS,
-          payload: tasks,
-        });
-      } catch (error) {
-        console.error("AppContext: Error fetching tasks:", error);
-        dispatch({
-          type: APP_ACTIONS.SET_ERROR,
-          payload: {
-            key: "tasks",
-            value: error.response?.data?.message || "Failed to fetch tasks",
-          },
-        });
-        dispatch({
-          type: APP_ACTIONS.SET_LOADING,
-          payload: { key: "tasks", value: false },
-        });
-      }
+            // Update the ref with current timestamp
+            tasksLastFetchRef.current = Date.now();
+
+            dispatch({
+              type: APP_ACTIONS.SET_TASKS,
+              payload: tasks,
+            });
+
+            resolve(tasks);
+          } catch (error) {
+            console.error("AppContext: Error fetching tasks:", error);
+            dispatch({
+              type: APP_ACTIONS.SET_ERROR,
+              payload: {
+                key: "tasks",
+                value: error.response?.data?.message || "Failed to fetch tasks",
+              },
+            });
+            reject(error);
+          } finally {
+            dispatch({
+              type: APP_ACTIONS.SET_LOADING,
+              payload: { key: "tasks", value: false },
+            });
+          }
+        }, 300); // 300ms debounce
+      });
     },
-    [user?.role]
+    [user?.role, state.tasks.length]
   );
 
   // Fetch teams
@@ -524,7 +574,7 @@ export const AppProvider = ({ children }) => {
     [user, needsRefresh]
   );
 
-  // Fetch all data
+  // Fetch all data with lazy loading
   const fetchAllData = useCallback(
     async (force = false) => {
       if (!isAuthenticated) return;
@@ -532,18 +582,56 @@ export const AppProvider = ({ children }) => {
       console.log("AppContext: fetchAllData called, force:", force);
 
       try {
-        await Promise.all([
-          fetchProjects(force),
-          fetchTasks(force),
-          fetchTeams(force),
-          fetchUsers(force),
-        ]);
-        console.log("AppContext: fetchAllData completed successfully");
+        // Lazy load data sequentially to prevent server overload
+        const results = [];
+
+        // First fetch projects (essential for dashboard)
+        try {
+          const projects = await fetchProjects(force);
+          results.push({ type: "projects", data: projects, success: true });
+        } catch (error) {
+          results.push({
+            type: "projects",
+            error: error.message,
+            success: false,
+          });
+        }
+
+        // Then fetch teams (less critical)
+        try {
+          const teams = await fetchTeams(force);
+          results.push({ type: "teams", data: teams, success: true });
+        } catch (error) {
+          results.push({ type: "teams", error: error.message, success: false });
+        }
+
+        // Finally fetch users (admin only, least critical)
+        try {
+          const users = await fetchUsers(force);
+          results.push({ type: "users", data: users, success: true });
+        } catch (error) {
+          results.push({ type: "users", error: error.message, success: false });
+        }
+
+        // Fetch tasks last (most data-heavy)
+        try {
+          const tasks = await fetchTasks(force);
+          results.push({ type: "tasks", data: tasks, success: true });
+        } catch (error) {
+          results.push({ type: "tasks", error: error.message, success: false });
+        }
+
+        console.log(
+          "AppContext: fetchAllData completed with results:",
+          results
+        );
+        return results;
       } catch (error) {
         console.error("AppContext: fetchAllData failed:", error);
+        throw error;
       }
     },
-    [isAuthenticated] // Only depend on authentication status
+    [isAuthenticated, fetchProjects, fetchTasks, fetchTeams, fetchUsers]
   );
 
   // Auto-fetch data when authenticated (only once)

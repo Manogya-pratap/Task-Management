@@ -11,6 +11,9 @@ const projectRoutes = require('./routes/projects');
 const taskRoutes = require('./routes/tasks');
 const auditRoutes = require('./routes/audit');
 const reportsRoutes = require('./routes/reports');
+const departmentRoutes = require('./routes/departments');
+const taskLogRoutes = require('./routes/taskLogs');
+const kanbanRoutes = require('./routes/kanban');
 
 const app = express();
 
@@ -43,6 +46,9 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/audit', auditRoutes);
 app.use('/api/reports', reportsRoutes);
+app.use('/api/departments', departmentRoutes);
+app.use('/api/task-logs', taskLogRoutes);
+app.use('/api/progressboard', kanbanRoutes);
 
 // Test route
 app.get('/api/test', (req, res) => {

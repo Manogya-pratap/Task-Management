@@ -1,0 +1,154 @@
+.task-details {
+  padding: 10px 0;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-row strong {
+  min-width: 150px;
+  color: #666;
+}
+
+.detail-section {
+  padding: 15px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.detail-section strong {
+  color: #666;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.task-history {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.timeline {
+  position: relative;
+  padding-left: 30px;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 10px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #dee2e6;
+}
+
+.timeline-item {
+  position: relative;
+  margin-bottom: 25px;
+}
+
+.timeline-marker {
+  position: absolute;
+  left: -24px;
+  top: 5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #007bff;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 2px #007bff;
+}
+
+.timeline-content {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 6px;
+  border-left: 3px solid #007bff;
+}
+
+.progress-chart {
+  padding: 20px 0;
+}
+
+.chart-container {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 300px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.chart-point {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  max-width: 60px;
+}
+
+.chart-bar {
+  width: 100%;
+  background: linear-gradient(to top, #007bff, #0056b3);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  min-height: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 5px;
+}
+
+.chart-bar:hover {
+  background: linear-gradient(to top, #0056b3, #003d82);
+  transform: scaleY(1.05);
+}
+
+.chart-value {
+  color: white;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.chart-label {
+  margin-top: 8px;
+  font-size: 10px;
+  color: #666;
+  text-align: center;
+  word-break: break-word;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .detail-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .detail-row strong {
+    min-width: auto;
+    margin-bottom: 5px;
+  }
+
+  .chart-container {
+    height: 250px;
+    padding: 15px 10px;
+  }
+
+  .chart-point {
+    max-width: 40px;
+  }
+
+  .chart-value {
+    font-size: 10px;
+  }
+
+  .chart-label {
+    font-size: 9px;
+  }
+}

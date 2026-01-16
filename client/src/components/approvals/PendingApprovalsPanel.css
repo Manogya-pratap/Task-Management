@@ -1,0 +1,141 @@
+.pending-approvals-panel {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.panel-header h5 {
+  margin: 0;
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.approvals-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.approval-card {
+  border-left: 4px solid #fd7e14;
+  transition: all 0.2s ease;
+}
+
+.approval-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.approval-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.approval-header h6 {
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.approval-description {
+  font-size: 14px;
+  color: #666;
+  margin: 10px 0;
+  line-height: 1.5;
+}
+
+.approval-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin: 10px 0;
+  padding: 10px 0;
+  border-top: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  color: #666;
+  font-size: 13px;
+}
+
+.meta-item i {
+  color: #007bff;
+}
+
+.approval-progress {
+  margin: 15px 0;
+}
+
+.approval-progress small {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.approval-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+  flex-wrap: wrap;
+}
+
+.approval-actions .btn {
+  flex: 1;
+  min-width: 100px;
+}
+
+/* Scrollbar */
+.approvals-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.approvals-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.approvals-list::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+.approvals-list::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .pending-approvals-panel {
+    padding: 15px;
+  }
+
+  .approval-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .approval-actions {
+    flex-direction: column;
+  }
+
+  .approval-actions .btn {
+    width: 100%;
+  }
+}

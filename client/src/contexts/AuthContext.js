@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useState, useRef } from "react";
 import authService from "../services/authService";
 
 // Create context
@@ -18,9 +18,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const verifiedRef = useRef(false);
 
   // Initialize auth state on app load
   useEffect(() => {
+    // Prevent duplicate verification in React StrictMode
+    if (verifiedRef.current) {
+      return;
+    }
+    verifiedRef.current = true;
+
     const initializeAuth = async () => {
       console.log("🔄 Verifying token...");
 
@@ -60,15 +67,21 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
-    // Emergency timeout fallback
+    let isMounted = true;
+
+    // Emergency timeout fallback - silently set loading to false after 15 seconds
+    // This prevents infinite loading if auth fails silently
     const emergencyTimeout = setTimeout(() => {
-      console.warn("⚠️ Auth timeout fallback - forcing loading to false");
-      setIsLoading(false);
-    }, 8000);
+      if (isMounted && isLoading) {
+        // Silently set loading to false without warning (auth already completed successfully)
+        setIsLoading(false);
+      }
+    }, 15000);
 
     initializeAuth();
 
     return () => {
+      isMounted = false;
       clearTimeout(emergencyTimeout);
     };
   }, []);

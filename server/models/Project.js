@@ -10,101 +10,79 @@ const projectSchema = new mongoose.Schema(
     },
     description: {
       type: String,
-      required: [true, "Project description is required"],
       trim: true,
       maxlength: [1000, "Description cannot exceed 1000 characters"],
     },
-    startDate: {
+    dept_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Department",
+      required: [true, "Department is required"],
+    },
+    created_by: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Creator is required"],
+    },
+    start_date: {
       type: Date,
       required: [true, "Start date is required"],
     },
-    endDate: {
+    deadline: {
       type: Date,
-      required: [true, "End date is required"],
+      required: [true, "Deadline is required"],
       validate: {
         validator: function (value) {
-          return value > this.startDate;
+          return value > this.start_date;
         },
-        message: "End date must be after start date",
+        message: "Deadline must be after start date",
       },
     },
     status: {
       type: String,
       required: [true, "Project status is required"],
       enum: {
-        values: ["planning", "active", "completed", "on_hold"],
-        message: "Status must be one of: planning, active, completed, on_hold",
+        values: ["Not Started", "In Progress", "Completed"],
+        message: "Status must be one of: Not Started, In Progress, Completed",
       },
-      default: "planning",
+      default: "Not Started",
     },
-    priority: {
+    progress: {
+      type: Number,
+      min: [0, "Progress cannot be negative"],
+      max: [100, "Progress cannot exceed 100"],
+      default: 0,
+    },
+    manual_adjustment: {
+      type: Number,
+      min: [-10, "Manual adjustment cannot be less than -10%"],
+      max: [10, "Manual adjustment cannot exceed +10%"],
+      default: 0,
+    },
+    remark: {
       type: String,
-      enum: {
-        values: ["low", "medium", "high", "urgent"],
-        message: "Priority must be one of: low, medium, high, urgent",
-      },
-      default: "medium",
+      trim: true,
+      maxlength: [500, "Remark cannot exceed 500 characters"],
     },
-    teamId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Team",
-      required: function () {
-        // Only require teamId for non-admin roles
-        return !["managing_director", "it_admin"].includes(this.role);
-      },
+    is_read_only: {
+      type: Boolean,
+      default: false,
     },
-    createdBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Creator is required"],
+    completion_details: {
+      team_lead_remark: String,
+      team_lead_remark_date: Date,
+      md_approval: Boolean,
+      md_approval_date: Date,
+      md_remark: String,
     },
-    assignedMembers: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    tasks: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Task",
-      },
-    ],
-    budget: {
-      type: Number,
-      min: [0, "Budget cannot be negative"],
-      default: 0,
-    },
-    actualCost: {
-      type: Number,
-      min: [0, "Actual cost cannot be negative"],
-      default: 0,
-    },
-    completionPercentage: {
-      type: Number,
-      min: [0, "Completion percentage cannot be negative"],
-      max: [100, "Completion percentage cannot exceed 100"],
-      default: 0,
-    },
-    tags: [
-      {
-        type: String,
-        trim: true,
-        maxlength: [50, "Tag cannot exceed 50 characters"],
-      },
-    ],
-    attachments: [
-      {
-        filename: String,
-        originalName: String,
-        mimetype: String,
-        size: Number,
-        uploadedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+    // Legacy fields for backward compatibility
+    startDate: Date,
+    endDate: Date,
+    teamId: mongoose.Schema.Types.ObjectId,
+    createdBy: mongoose.Schema.Types.ObjectId,
+    assignedMembers: [mongoose.Schema.Types.ObjectId],
+    tasks: [mongoose.Schema.Types.ObjectId],
+    priority: String,
+    completionPercentage: Number,
   },
   {
     timestamps: true,
@@ -120,12 +98,9 @@ const projectSchema = new mongoose.Schema(
 // Indexes for performance
 projectSchema.index({ name: 1 });
 projectSchema.index({ status: 1 });
-projectSchema.index({ teamId: 1 });
-projectSchema.index({ createdBy: 1 });
-projectSchema.index({ startDate: 1, endDate: 1 });
-projectSchema.index({ assignedMembers: 1 });
-projectSchema.index({ priority: 1 });
-projectSchema.index({ tags: 1 });
+projectSchema.index({ dept_id: 1 });
+projectSchema.index({ created_by: 1 });
+projectSchema.index({ start_date: 1, deadline: 1 });
 
 // Virtual for task count
 projectSchema.virtual("taskCount").get(function () {

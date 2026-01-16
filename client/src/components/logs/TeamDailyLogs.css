@@ -1,0 +1,170 @@
+.team-daily-logs {
+  padding: 20px;
+}
+
+.logs-header {
+  margin-bottom: 30px;
+}
+
+.logs-header h4 {
+  color: #333;
+  margin-bottom: 5px;
+}
+
+.logs-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.date-selector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.date-input {
+  max-width: 200px;
+  text-align: center;
+}
+
+.group-selector {
+  display: flex;
+  align-items: center;
+}
+
+.user-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.user-group-card {
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-group-card .card-header {
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.user-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.user-header h6 {
+  color: #333;
+  display: flex;
+  align-items: center;
+}
+
+.user-stats {
+  display: flex;
+  gap: 10px;
+}
+
+.user-logs {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.log-item {
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #007bff;
+}
+
+.log-task {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.log-task strong {
+  color: #333;
+}
+
+.log-remark {
+  margin: 10px 0;
+  color: #666;
+  line-height: 1.6;
+}
+
+.remark-cell {
+  max-width: 300px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+/* Table Styles */
+.table {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.table thead {
+  background-color: #f8f9fa;
+}
+
+.table thead th {
+  font-weight: 600;
+  color: #333;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .team-daily-logs {
+    padding: 15px;
+  }
+
+  .logs-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .date-selector {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .date-input {
+    max-width: 100%;
+    order: -1;
+    width: 100%;
+  }
+
+  .group-selector {
+    justify-content: center;
+  }
+
+  .user-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .user-stats {
+    flex-wrap: wrap;
+  }
+
+  .table {
+    font-size: 14px;
+  }
+
+  .remark-cell {
+    max-width: 200px;
+  }
+}

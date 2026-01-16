@@ -1,0 +1,152 @@
+.task-card {
+  background-color: #ffffff;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.task-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  border-color: #007bff;
+}
+
+.task-card-dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.task-card-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.priority-badge {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.priority-low {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+
+.priority-medium {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.priority-high {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.priority-urgent {
+  background-color: #dc3545;
+  color: #ffffff;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.task-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.task-card-description {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.task-progress {
+  margin-bottom: 10px;
+}
+
+.task-progress small {
+  font-size: 11px;
+  margin-top: 4px;
+  display: block;
+}
+
+.task-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #666;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.task-assignee {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.task-assignee i {
+  font-size: 16px;
+}
+
+.task-due-date {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.task-due-date i {
+  font-size: 14px;
+}
+
+.task-departments {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.task-departments small {
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .task-card {
+    padding: 10px;
+  }
+
+  .task-card-title {
+    font-size: 13px;
+  }
+
+  .task-card-description {
+    font-size: 11px;
+  }
+
+  .task-card-footer {
+    font-size: 11px;
+  }
+}

@@ -1,0 +1,190 @@
+import { useState, useCallback } from "react";
+import { useApp } from "../contexts/AppContext";
+
+// Lazy loading configuration
+const LAZY_LOAD_DELAY = 100; // 100ms delay between loads
+const PRIORITY_LEVELS = {
+  CRITICAL: 1, // Projects - needed for dashboard layout
+  HIGH: 2, // Teams - needed for user assignments
+  MEDIUM: 3, // Tasks - heavy data, load last
+  LOW: 4, // Users - admin only, least critical
+};
+
+export const useLazyDashboard = () => {
+  const {
+    projects,
+    tasks,
+    teams,
+    users,
+    loading,
+    fetchProjects,
+    fetchTasks,
+    fetchTeams,
+    fetchUsers,
+    user,
+  } = useApp();
+
+  const [lazyLoading, setLazyLoading] = useState({
+    projects: false,
+    tasks: false,
+    teams: false,
+    users: false,
+  });
+
+  const [loadedSections, setLoadedSections] = useState({
+    projects: false,
+    tasks: false,
+    teams: false,
+    users: false,
+  });
+
+  // Load data with priority and delay
+  const loadSection = useCallback(
+    async (section, priority = PRIORITY_LEVELS.MEDIUM) => {
+      // Check if already loaded or loading
+      if (loadedSections[section] || lazyLoading[section]) {
+        console.log(`Section ${section} already loaded or loading, skipping`);
+        return;
+      }
+
+      setLazyLoading((prev) => ({ ...prev, [section]: true }));
+
+      try {
+        // Add delay based on priority to prevent server overload
+        const delay = priority * LAZY_LOAD_DELAY;
+        await new Promise((resolve) => setTimeout(resolve, delay));
+
+        switch (section) {
+          case "projects":
+            await fetchProjects(false);
+            break;
+          case "tasks":
+            try {
+              await fetchTasks(false);
+            } catch (error) {
+              console.error(`Failed to load tasks, marking as loaded to prevent retry loop:`, error);
+              // Mark as loaded even on error to prevent infinite retry
+            }
+            break;
+          case "teams":
+            await fetchTeams(false);
+            break;
+          case "users":
+            if (user && ["managing_director", "it_admin"].includes(user.role)) {
+              await fetchUsers(false);
+            }
+            break;
+          default:
+            console.warn(`Unknown section: ${section}`);
+            break;
+        }
+
+        setLoadedSections((prev) => ({ ...prev, [section]: true }));
+      } catch (error) {
+        console.error(`Failed to load ${section}:`, error);
+        // Mark as loaded even on error to prevent infinite retry loop
+        setLoadedSections((prev) => ({ ...prev, [section]: true }));
+      } finally {
+        setLazyLoading((prev) => ({ ...prev, [section]: false }));
+      }
+    },
+    [
+      fetchProjects,
+      fetchTasks,
+      fetchTeams,
+      fetchUsers,
+      user
+      // Removed loadedSections and lazyLoading from dependencies to prevent infinite loop
+    ]
+  );
+
+  // Initialize lazy loading
+  const initializeDashboard = useCallback(async () => {
+    // Load critical data first
+    if (!projects || projects.length === 0) {
+      await loadSection("projects", PRIORITY_LEVELS.CRITICAL);
+    }
+
+    // Load high priority data
+    if (!teams || teams.length === 0) {
+      await loadSection("teams", PRIORITY_LEVELS.HIGH);
+    }
+
+    // Load medium priority data with delay
+    setTimeout(() => {
+      if (!tasks || tasks.length === 0) {
+        loadSection("tasks", PRIORITY_LEVELS.MEDIUM);
+      }
+    }, 500);
+
+    // Load low priority data last
+    setTimeout(() => {
+      if (!users || users.length === 0) {
+        loadSection("users", PRIORITY_LEVELS.LOW);
+      }
+    }, 1000);
+  }, [projects, teams, tasks, users, loadSection]);
+
+  // Check if dashboard is ready
+  const isDashboardReady = useCallback(() => {
+    return (
+      projects &&
+      projects.length > 0 &&
+      !loading.projects &&
+      !lazyLoading.projects
+    );
+  }, [projects, loading.projects, lazyLoading.projects]);
+
+  // Get loading status for UI
+  const getLoadingStatus = useCallback(() => {
+    const sections = ["projects", "teams", "tasks", "users"];
+    const isLoading = sections.some(
+      (section) => loading[section] || lazyLoading[section]
+    );
+    const hasData = sections.some((section) => {
+      const data = { projects, teams, tasks, users }[section];
+      return data && data.length > 0;
+    });
+
+    return {
+      isLoading,
+      hasData,
+      isPartiallyLoaded: hasData && !isDashboardReady(),
+      criticalLoaded: projects && projects.length > 0,
+      sections: {
+        projects: loading.projects || lazyLoading.projects,
+        teams: loading.teams || lazyLoading.teams,
+        tasks: loading.tasks || lazyLoading.tasks,
+        users: loading.users || lazyLoading.users,
+      },
+    };
+  }, [loading, lazyLoading, projects, teams, tasks, users, isDashboardReady]);
+
+  // Force reload specific section
+  const reloadSection = useCallback(
+    async (section) => {
+      setLoadedSections((prev) => ({ ...prev, [section]: false }));
+      await loadSection(section, PRIORITY_LEVELS.CRITICAL);
+    },
+    [loadSection]
+  );
+
+  return {
+    // Data
+    projects,
+    tasks,
+    teams,
+    users,
+
+    // Loading states
+    lazyLoading,
+    loadedSections,
+    loadingStatus: getLoadingStatus(),
+
+    // Methods
+    initializeDashboard,
+    loadSection,
+    reloadSection,
+    isDashboardReady,
+  };
+};

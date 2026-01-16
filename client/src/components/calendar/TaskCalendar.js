@@ -48,10 +48,19 @@ const TaskCalendar = ({
 
   useEffect(() => {
     // Only fetch tasks if they're not already loaded
-    if (!allTasks || allTasks.length === 0) {
-      fetchTasks();
-    }
-  }, [projectId, allTasks?.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    const loadTasks = async () => {
+      try {
+        if (!allTasks || allTasks.length === 0) {
+          await fetchTasks();
+        }
+      } catch (err) {
+        console.error('TaskCalendar: Error fetching tasks:', err);
+        setError('Unable to load tasks. Please try again later.');
+      }
+    };
+    
+    loadTasks();
+  }, [projectId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Filter tasks for calendar display
   const tasks = useMemo(() => {
@@ -204,10 +213,16 @@ const TaskCalendar = ({
   const handleDeleteTask = async (taskId) => {
     try {
       await deleteTask(taskId);
-      await fetchTasks();
+      try {
+        await fetchTasks();
+      } catch (fetchError) {
+        console.error('Error refreshing tasks after delete:', fetchError);
+        // Don't show error, task was deleted successfully
+      }
       setShowTaskModal(false);
     } catch (error) {
       console.error("Error deleting task:", error);
+      setError('Failed to delete task. Please try again.');
     }
   };
 
@@ -231,7 +246,12 @@ const TaskCalendar = ({
         console.log(
           "TaskCalendar: Task operation successful, refreshing tasks"
         );
-        await fetchTasks();
+        try {
+          await fetchTasks();
+        } catch (fetchError) {
+          console.error('Error refreshing tasks after save:', fetchError);
+          // Don't show error, task was saved successfully
+        }
         setShowTaskForm(false);
         setEditingTask(null);
 
@@ -346,6 +366,22 @@ const TaskCalendar = ({
         </div>
 
         <div className="card-body p-0">
+          {/* Error Display */}
+          {error && (
+            <div className="alert alert-warning m-3 mb-0" role="alert">
+              <div className="d-flex align-items-center">
+                <i className="fas fa-exclamation-triangle me-2"></i>
+                <div className="flex-grow-1">{error}</div>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setError(null)}
+                  aria-label="Close"
+                ></button>
+              </div>
+            </div>
+          )}
+          
           {/* Deadline Notifications */}
           {deadlineNotifications.length > 0 && (
             <div className="deadline-notifications p-3 border-bottom bg-warning bg-opacity-10">

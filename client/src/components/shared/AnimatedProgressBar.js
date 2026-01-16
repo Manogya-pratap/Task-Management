@@ -11,11 +11,12 @@ const AnimatedProgressBar = ({
   dataType = "all",
   height = "8px",
   className = "",
+  autoSync = false, // Default to false to prevent infinite loops
   ...props
 }) => {
   const { isSyncing, syncStatus, getSyncStatusText } = useRealTimeSync(
     dataType,
-    true
+    autoSync // Use the prop value instead of hardcoded true
   );
 
   // Determine animation class based on variant and sync status

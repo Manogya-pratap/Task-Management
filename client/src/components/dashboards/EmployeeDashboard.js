@@ -1,81 +1,35 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
 import TaskCalendar from "../calendar/TaskCalendar";
-import ProjectTimeline from "../timeline/ProjectTimeline";
 import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import { ComponentLoader } from "../LoadingSpinner";
 import "../../styles/dashboard-responsive.css";
 
 const EmployeeDashboard = () => {
   const { user, getUserFullName } = useAuth();
-  const { projects, tasks, loading, errors, fetchAllData } = useApp();
+  const { projects, tasks, errors } = useApp();
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   useEffect(() => {
-    console.log("EmployeeDashboard: Component mounted");
-    console.log("EmployeeDashboard: User:", user);
-    console.log("EmployeeDashboard: Starting data fetch");
+    // Set initial load to false after a short delay
+    // This prevents infinite loading even if API is slow
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 2000); // 2 seconds max wait
 
-    // Fetch all data when component mounts
-    fetchAllData(true) // Force refresh for dashboard
-      .then(() => {
-        console.log("EmployeeDashboard: Data fetch completed");
-      })
-      .catch((error) => {
-        console.error("EmployeeDashboard: Data fetch failed:", error);
-      });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return () => clearTimeout(timer);
+  }, []);
 
-  // Debug rendering
-  useEffect(() => {
-    console.log("EmployeeDashboard: Rendering with state:", {
-      loading,
-      errors,
-      projectsCount: projects.length,
-      user: user?.name,
-    });
-  }, [loading, errors, projects, user]);
-
-  const getTaskStatusColor = (status) => {
-    const colors = {
-      new: "secondary",
-      in_progress: "warning",
-      completed: "success",
-    };
-    return colors[status] || "secondary";
-  };
-
-  const getTaskPriorityColor = (priority) => {
-    const colors = {
-      low: "info",
-      medium: "warning",
-      high: "danger",
-      urgent: "danger",
-    };
-    return colors[priority] || "secondary";
-  };
-
-  const getProjectStatusColor = (status) => {
-    const colors = {
-      planning: "info",
-      in_progress: "warning",
-      completed: "success",
-      on_hold: "secondary",
-      cancelled: "danger",
-    };
-    return colors[status] || "secondary";
-  };
-
-  if (loading.global || loading.projects || loading.tasks) {
-    console.log("EmployeeDashboard: Showing loader");
+  // Show loader only during initial load
+  if (isInitialLoad && tasks.length === 0 && projects.length === 0) {
     return <ComponentLoader text="Loading your dashboard..." />;
   }
 
   if (errors.global || errors.projects || errors.tasks) {
     const errorMessage = errors.global || errors.projects || errors.tasks;
-    console.error("EmployeeDashboard: Showing error:", errorMessage);
     return (
-      <div className="alert alert-danger" role="alert">
+      <div className="alert alert-danger m-4" role="alert">
         <h5 className="alert-heading">
           <i className="fas fa-exclamation-triangle me-2"></i>
           Error Loading Dashboard
@@ -87,9 +41,8 @@ const EmployeeDashboard = () => {
 
   // Check if user is available
   if (!user) {
-    console.error("EmployeeDashboard: No user found");
     return (
-      <div className="alert alert-warning" role="alert">
+      <div className="alert alert-warning m-4" role="alert">
         <h5 className="alert-heading">
           <i className="fas fa-exclamation-triangle me-2"></i>
           User Not Found
@@ -101,9 +54,6 @@ const EmployeeDashboard = () => {
 
   // Filter data for employee's tasks and projects
   const userTasks = tasks.filter((task) => task.assignedTo?._id === user._id);
-  const userProjects = projects.filter((project) =>
-    project.assignedMembers?.some((member) => member._id === user._id)
-  );
 
   // Calculate personal metrics
   const totalTasks = userTasks.length;
@@ -116,38 +66,10 @@ const EmployeeDashboard = () => {
   const scheduledTasks = userTasks.filter(
     (t) => t.status === "scheduled"
   ).length;
-  const newTasks = userTasks.filter((t) => t.status === "new").length;
 
   // Calculate personal completion percentage
   const personalCompletion =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-
-  // Get upcoming tasks (scheduled or due soon)
-  const upcomingTasks = tasks
-    .filter((task) => {
-      if (!task.dueDate) return false;
-      const dueDate = new Date(task.dueDate);
-      const today = new Date();
-      const daysUntilDue = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
-      return daysUntilDue > 0 && daysUntilDue <= 7;
-    })
-    .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
-
-  const teamTasks = userTasks; // Use userTasks instead of undefined userTeam
-
-  // Get recent tasks
-  const recentTasks = tasks
-    .filter((task) => {
-      if (!task.createdAt) return false;
-      const createdDate = new Date(task.createdAt);
-      const today = new Date();
-      const daysSinceCreated = Math.ceil(
-        (today - createdDate) / (1000 * 60 * 60 * 24)
-      );
-      return daysSinceCreated <= 7;
-    })
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
 
   return (
     <div className="dashboard-container employee-dashboard">
@@ -205,11 +127,11 @@ const EmployeeDashboard = () => {
                   <i className="fas fa-inbox fa-2x text-secondary"></i>
                 </div>
               </div>
-              <div className="metrics-value">{newTasks}</div>
-              <div className="metrics-label">New Tasks</div>
-              <small className="text-muted">
-                <i className="fas fa-plus me-1"></i>
-                Ready to start
+              <div className="metrics-value">{totalTasks}</div>
+              <div className="metrics-label">Total Tasks</div>
+              <small className="text-secondary">
+                <i className="fas fa-list me-1"></i>
+                All assigned tasks
               </small>
             </div>
           </div>
@@ -266,9 +188,10 @@ const EmployeeDashboard = () => {
                 variant="success"
                 height="8px"
                 showLabel={false}
-                showSyncStatus={true}
-                dataType="all"
+                showSyncStatus={false}
+                dataType="tasks"
                 className="mt-2"
+                autoSync={false}
               />
               <div className="live-indicator">
                 <i className="fas fa-circle me-1"></i>
@@ -277,74 +200,74 @@ const EmployeeDashboard = () => {
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Personal Progress Overview */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card dashboard-card border-0 shadow-sm">
-              <div className="card-header bg-white border-0 pb-0">
-                <h5 className="card-title mb-0">
-                  <i className="fas fa-chart-pie me-2 text-success"></i>
-                  My Task Progress Overview
-                </h5>
-              </div>
-              <div className="card-body">
-                <div className="row align-items-center">
-                  <div className="col-md-8">
-                    <div className="row">
-                      <div className="col-sm-6 mb-3">
-                        <div className="d-flex align-items-center">
-                          <div className="flex-shrink-0">
-                            <div className="rounded-circle bg-success bg-opacity-10 p-2">
-                              <i className="fas fa-trophy text-success"></i>
-                            </div>
+      {/* Personal Progress Overview */}
+      <div className="row mb-4">
+        <div className="col-12">
+          <div className="card dashboard-card border-0 shadow-sm">
+            <div className="card-header bg-white border-0 pb-0">
+              <h5 className="card-title mb-0">
+                <i className="fas fa-chart-pie me-2 text-success"></i>
+                My Task Progress Overview
+              </h5>
+            </div>
+            <div className="card-body">
+              <div className="row align-items-center">
+                <div className="col-md-8">
+                  <div className="row">
+                    <div className="col-sm-6 mb-3">
+                      <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0">
+                          <div className="rounded-circle bg-success bg-opacity-10 p-2">
+                            <i className="fas fa-trophy text-success"></i>
                           </div>
-                          <div className="flex-grow-1 ms-3">
-                            <div className="fw-medium">Overall Progress</div>
+                        </div>
+                        <div className="flex-grow-1 ms-3">
+                          <div className="fw-medium">Overall Progress</div>
+                          <div
+                            className="progress mt-1"
+                            style={{ height: "10px" }}
+                          >
                             <div
-                              className="progress mt-1"
-                              style={{ height: "10px" }}
-                            >
-                              <div
-                                className="progress-bar bg-success"
-                                role="progressbar"
-                                style={{ width: `${personalCompletion}%` }}
-                              ></div>
-                            </div>
+                              className="progress-bar bg-success"
+                              role="progressbar"
+                              style={{ width: `${personalCompletion}%` }}
+                            ></div>
                           </div>
                         </div>
                       </div>
-                      <div className="col-sm-6 mb-3">
-                        <div className="d-flex align-items-center">
-                          <div className="flex-shrink-0">
-                            <div className="rounded-circle bg-info bg-opacity-10 p-2">
-                              <i className="fas fa-tasks text-info"></i>
-                            </div>
+                    </div>
+                    <div className="col-sm-6 mb-3">
+                      <div className="d-flex align-items-center">
+                        <div className="flex-shrink-0">
+                          <div className="rounded-circle bg-info bg-opacity-10 p-2">
+                            <i className="fas fa-tasks text-info"></i>
                           </div>
-                          <div className="flex-grow-1 ms-3">
-                            <div className="fw-medium">Active Workload</div>
-                            <div className="mt-1">
-                              <span className="badge bg-warning me-1">
-                                {inProgressTasks}
-                              </span>
-                              <span>{totalTasks} Total Tasks</span>
-                            </div>
+                        </div>
+                        <div className="flex-grow-1 ms-3">
+                          <div className="fw-medium">Active Workload</div>
+                          <div className="mt-1">
+                            <span className="badge bg-warning me-1">
+                              {inProgressTasks}
+                            </span>
+                            <span>{totalTasks} Total Tasks</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="col-md-4">
-                    <div className="d-flex align-items-center">
-                      <div className="flex-shrink-0">
-                        <div className="bg-success bg-opacity-10 rounded-3 p-3">
-                          <i className="fas fa-check-circle text-success fs-4"></i>
-                        </div>
+                </div>
+                <div className="col-md-4">
+                  <div className="d-flex align-items-center">
+                    <div className="flex-shrink-0">
+                      <div className="bg-success bg-opacity-10 rounded-3 p-3">
+                        <i className="fas fa-check-circle text-success fs-4"></i>
                       </div>
-                      <div className="flex-grow-1 ms-3">
-                        <h6 className="mb-0">Completed</h6>
-                        <h3 className="mb-0">{completedTasks}</h3>
-                      </div>
+                    </div>
+                    <div className="flex-grow-1 ms-3">
+                      <h6 className="mb-0">Completed</h6>
+                      <h3 className="mb-0">{completedTasks}</h3>
                     </div>
                   </div>
                 </div>
@@ -352,31 +275,19 @@ const EmployeeDashboard = () => {
             </div>
           </div>
         </div>
-
-        {/* Task Calendar */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card dashboard-card border-0 shadow-sm">
-              <div className="card-header bg-white border-0 pb-0">
-                <h5 className="card-title mb-0">Task Calendar</h5>
-              </div>
-              <div className="card-body">
-                <TaskCalendar showDeadlineNotifications={true} height="400px" />
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Timeline Integration */}
+      {/* Task Calendar */}
       <div className="row mb-4">
         <div className="col-12">
-          <ProjectTimeline
-            onTaskClick={(task) => {
-              console.log("Timeline task clicked:", task);
-              // Add task detail modal or navigation here
-            }}
-          />
+          <div className="card dashboard-card border-0 shadow-sm">
+            <div className="card-header bg-white border-0 pb-0">
+              <h5 className="card-title mb-0">Task Calendar</h5>
+            </div>
+            <div className="card-body">
+              <TaskCalendar showDeadlineNotifications={true} height="400px" />
+            </div>
+          </div>
         </div>
       </div>
     </div>
