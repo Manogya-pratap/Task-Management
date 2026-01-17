@@ -68,16 +68,24 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve static files in production
-if (process.env.NODE_ENV === 'production') {
-  // Serve static files from React build
-  app.use(express.static(path.join(__dirname, '../client/build')));
-  
-  // Handle React routing - return all requests to React app
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/build', 'index.html'));
+// Root route - API status (instead of serving React build)
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Task Management Backend API',
+    status: 'running',
+    version: '1.0.0',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      users: '/api/users',
+      projects: '/api/projects',
+      tasks: '/api/tasks',
+      progressboard: '/api/progressboard'
+    }
   });
-}
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -103,14 +111,21 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler for API routes only (in development)
-if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/*', (req, res) => {
-    res.status(404).json({
-      status: 'fail',
-      message: `API route ${req.originalUrl} not found`
-    });
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({
+    status: 'fail',
+    message: `API route ${req.originalUrl} not found`
   });
-}
+});
+
+// 404 handler for non-API routes
+app.use('*', (req, res) => {
+  res.status(404).json({
+    status: 'fail',
+    message: `Route ${req.originalUrl} not found`,
+    note: 'This is a backend API server. Frontend should be deployed separately.'
+  });
+});
 
 module.exports = app;
