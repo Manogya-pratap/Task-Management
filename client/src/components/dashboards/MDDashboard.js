@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Card, Row, Col, Badge, Button, Table, Modal, Form, Alert } from "react-bootstrap";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
 import { useLazyDashboard } from "../../hooks/useLazyDashboard";
@@ -6,6 +7,9 @@ import TaskCalendar from "../calendar/TaskCalendar";
 import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import PulseTest from "../shared/PulseTest";
 import { ComponentLoader } from "../LoadingSpinner";
+import projectService from "../../services/projectService";
+import taskService from "../../services/taskService";
+import departmentService from "../../services/departmentService";
 
 const MDDashboard = () => {
   const { getUserFullName } = useAuth();
@@ -16,9 +20,10 @@ const MDDashboard = () => {
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
 
   useEffect(() => {
-    // Initialize dashboard with lazy loading
+    // Initialize dashboard with lazy loading - only run once
+    console.log('MDDashboard useEffect called');
     initializeDashboard();
-  }, [initializeDashboard]);
+  }, []); // Empty dependency array to run only once
 
   const getProjectStatusColor = (status) => {
     const colors = {

@@ -10,6 +10,7 @@ import { SocketProvider } from "./contexts/SocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginForm from "./components/LoginForm";
 import Layout from "./components/Layout";
+import ITAdminDashboard from "./components/dashboards/ITAdminDashboard";
 import MDDashboard from "./components/dashboards/MDDashboard";
 import TeamLeadDashboard from "./components/dashboards/TeamLeadDashboard";
 import EmployeeDashboard from "./components/dashboards/EmployeeDashboard";
@@ -46,8 +47,13 @@ const Dashboard = () => {
     if (!user) return null;
 
     switch (user.role) {
-      case "managing_director":
       case "it_admin":
+        return (
+          <DashboardErrorBoundary>
+            <ITAdminDashboard />
+          </DashboardErrorBoundary>
+        );
+      case "managing_director":
         return (
           <DashboardErrorBoundary>
             <MDDashboard />

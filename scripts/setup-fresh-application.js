@@ -69,38 +69,52 @@ const createDepartments = async () => {
     
     const departments = [
       {
+        dept_name: 'Management',
         name: 'Management',
         description: 'Executive management and administration',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'IT Development',
         name: 'IT Development',
         description: 'Software development and IT infrastructure',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'Human Resources',
         name: 'Human Resources',
         description: 'HR and employee management',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'Finance',
         name: 'Finance',
         description: 'Financial operations and accounting',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'Marketing',
         name: 'Marketing',
         description: 'Marketing and business development',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'Operations',
         name: 'Operations',
         description: 'Operations and logistics',
+        is_active: true,
         isActive: true
       },
       {
+        dept_name: 'Sales',
         name: 'Sales',
         description: 'Sales and customer relations',
+        is_active: true,
         isActive: true
       }
     ];
