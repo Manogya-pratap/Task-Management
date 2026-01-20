@@ -30,10 +30,6 @@ const Layout = ({ children }) => {
 
   const toggleSidebar = () => {
     const newState = !sidebarCollapsed;
-    console.log("Sidebar toggle clicked:", {
-      currentState: sidebarCollapsed,
-      newState,
-    });
     setSidebarCollapsed(newState);
     localStorage.setItem("sidebarCollapsed", JSON.stringify(newState));
   };
@@ -328,7 +324,6 @@ const Layout = ({ children }) => {
           height: "100vh",
           background: "linear-gradient(180deg, #800020 0%, #A0002A 100%)",
           color: "white",
-          transition: "width 0.3s ease",
           position: "fixed",
           left: 0,
           top: 0,
@@ -389,12 +384,8 @@ const Layout = ({ children }) => {
                 fontWeight: "bold",
                 fontSize: sidebarCollapsed ? "14px" : "18px",
                 cursor: "pointer",
-                transition: "all 0.2s ease",
               }}
               onClick={() => {
-                console.log(
-                  "Profile Settings clicked, navigating to /settings"
-                );
                 navigate("/settings");
               }}
               title="Profile Settings"
@@ -408,7 +399,6 @@ const Layout = ({ children }) => {
                   className="fw-bold text-white"
                   style={{ cursor: "pointer" }}
                   onClick={() => {
-                    console.log("User name clicked, navigating to /settings");
                     navigate("/settings");
                   }}
                 >
@@ -454,15 +444,6 @@ const Layout = ({ children }) => {
                             window.dispatchEvent(event);
                           }, 100);
                         } else {
-                          console.log(
-                            "Sidebar item clicked, navigating to:",
-                            item.href
-                          );
-                          console.log("Current path:", location.pathname);
-                          console.log(
-                            "Will be active:",
-                            location.pathname === item.href
-                          );
                           navigate(item.href);
                         }
                       }}
@@ -474,10 +455,9 @@ const Layout = ({ children }) => {
                           location.pathname === item.href
                             ? "rgba(255,255,255,0.1)"
                             : item.special
-                              ? "linear-gradient(135deg, #007bff 0%, #0056b3 100%)"
+                              ? "#007bff"
                               : "transparent",
                         color: "white",
-                        transition: "all 0.3s ease",
                         fontSize: "14px",
                         fontWeight:
                           location.pathname === item.href
@@ -503,34 +483,6 @@ const Layout = ({ children }) => {
                           : "none",
                       }}
                       title={sidebarCollapsed ? item.label : item.description}
-                      onMouseEnter={(e) => {
-                        if (location.pathname !== item.href) {
-                          if (item.special) {
-                            e.target.style.background =
-                              "linear-gradient(135deg, #0056b3 0%, #004085 100%)";
-                            e.target.style.transform = "translateX(4px)";
-                            e.target.style.boxShadow =
-                              "0 4px 12px rgba(0,123,255,0.4)";
-                          } else {
-                            e.target.style.background = "rgba(255,255,255,0.1)";
-                            e.target.style.transform = "translateX(4px)";
-                          }
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (location.pathname !== item.href) {
-                          if (item.special) {
-                            e.target.style.background =
-                              "linear-gradient(135deg, #007bff 0%, #0056b3 100%)";
-                            e.target.style.transform = "translateX(0)";
-                            e.target.style.boxShadow =
-                              "0 2px 8px rgba(0,123,255,0.3)";
-                          } else {
-                            e.target.style.background = "transparent";
-                            e.target.style.transform = "translateX(0)";
-                          }
-                        }
-                      }}
                     >
                       <i
                         className={`${item.icon} me-3 text-white`}
@@ -560,12 +512,6 @@ const Layout = ({ children }) => {
             onClick={logout}
             className="btn w-100 text-white d-flex align-items-center justify-content-center"
             style={{ background: "rgba(255,255,255,0.1)" }}
-            onMouseEnter={(e) =>
-              (e.target.style.background = "rgba(255,255,255,0.2)")
-            }
-            onMouseLeave={(e) =>
-              (e.target.style.background = "rgba(255,255,255,0.1)")
-            }
           >
             <i className="fas fa-sign-out-alt me-2"></i>
             {!sidebarCollapsed && "Logout"}
@@ -586,7 +532,6 @@ const Layout = ({ children }) => {
           background: "linear-gradient(90deg, #ffffff 0%, #f8fafc 100%)",
           borderBottom: "1px solid #e2e8f0",
           zIndex: 999,
-          transition: "left 0.3s ease",
           boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
           margin: 0,
           padding: 0,
@@ -639,7 +584,6 @@ const Layout = ({ children }) => {
                   color: "white",
                   fontWeight: "bold",
                   fontSize: "14px",
-                  transition: "transform 0.2s ease",
                 }}
                 onClick={() => {
                   setSelectedUser(user);
@@ -670,7 +614,6 @@ const Layout = ({ children }) => {
                 className="btn btn-sm btn-outline-secondary"
                 title="Notifications"
                 onClick={() => {
-                  console.log("Notification icon clicked");
                   setShowNotifications(true);
                 }}
               >
@@ -680,7 +623,6 @@ const Layout = ({ children }) => {
                 className="btn btn-sm btn-outline-secondary"
                 title="Settings"
                 onClick={() => {
-                  console.log("Cog icon clicked, navigating to /settings");
                   navigate("/settings");
                 }}
               >
@@ -703,7 +645,6 @@ const Layout = ({ children }) => {
         className="main-content flex-grow-1"
         style={{
           marginLeft: sidebarCollapsed ? "80px" : "280px",
-          transition: "margin-left 0.3s ease",
           minHeight: "100vh",
           background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
           paddingTop: windowSize.width <= 768 ? "50px" : "60px",

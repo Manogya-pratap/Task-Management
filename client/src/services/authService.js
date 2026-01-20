@@ -21,10 +21,8 @@ class AuthService {
 
       return { success: false, message: "Invalid response format" };
     } catch (error) {
-      return {
-        success: false,
-        message: error.response?.data?.message || "Login failed",
-      };
+      // Re-throw the error so AuthContext can handle status codes
+      throw error;
     }
   }
 

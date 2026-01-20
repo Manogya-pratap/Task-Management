@@ -54,8 +54,12 @@ const ITAdminDashboard = () => {
         departmentService.getAllDepartments()
       ]);
       
-      setUsers(usersRes.data?.users || []);
-      setDepartments(deptsRes.data?.departments || []);
+      // Fix: The API returns data in data.data.users and data.data.departments
+      setUsers(usersRes.data?.data?.users || usersRes.data?.users || []);
+      setDepartments(deptsRes.data?.data?.departments || deptsRes.data?.departments || []);
+      
+      console.log('Loaded users:', usersRes.data?.data?.users?.length || 0);
+      console.log('Loaded departments:', deptsRes.data?.data?.departments?.length || 0);
     } catch (error) {
       console.error("Error loading admin data:", error);
       setError("Failed to load admin data");

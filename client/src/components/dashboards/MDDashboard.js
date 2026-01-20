@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { Card, Row, Col, Badge, Button, Table, Modal, Form, Alert } from "react-bootstrap";
+import React, { useEffect, useState, useRef } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import { useApp } from "../../contexts/AppContext";
 import { useLazyDashboard } from "../../hooks/useLazyDashboard";
@@ -7,9 +6,6 @@ import TaskCalendar from "../calendar/TaskCalendar";
 import AnimatedProgressBar from "../shared/AnimatedProgressBar";
 import PulseTest from "../shared/PulseTest";
 import { ComponentLoader } from "../LoadingSpinner";
-import projectService from "../../services/projectService";
-import taskService from "../../services/taskService";
-import departmentService from "../../services/departmentService";
 
 const MDDashboard = () => {
   const { getUserFullName } = useAuth();
@@ -18,12 +14,17 @@ const MDDashboard = () => {
     useLazyDashboard();
 
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
+  
+  // ✅ FIX 1: Guard initializeDashboard with useRef to prevent infinite loops
+  const initializedRef = useRef(false);
 
   useEffect(() => {
-    // Initialize dashboard with lazy loading - only run once
-    console.log('MDDashboard useEffect called');
-    initializeDashboard();
-  }, []); // Empty dependency array to run only once
+    if (!initializedRef.current) {
+      initializedRef.current = true;
+      console.log('MDDashboard: Initializing dashboard (once)');
+      initializeDashboard();
+    }
+  }, [initializeDashboard]);
 
   const getProjectStatusColor = (status) => {
     const colors = {
@@ -45,56 +46,20 @@ const MDDashboard = () => {
     return colors[status] || "secondary";
   };
 
-  // Check if data is available
-  if (!projects && !loadingStatus.hasData) {
-    console.log("MDDashboard: No data available yet", {
-      projects,
-      loadingStatus,
-    });
-    return <ComponentLoader text="Initializing company dashboard..." />;
-  }
-
-  // Check if data arrays are empty but not loading
-  if (
-    projects.length === 0 &&
-    tasks.length === 0 &&
-    teams.length === 0 &&
-    !loadingStatus.isLoading &&
-    !loadingStatus.hasData
-  ) {
-    console.log("MDDashboard: No data found");
-    return (
-      <div className="alert alert-info" role="alert">
-        <h5 className="alert-heading">
-          <i className="fas fa-info-circle me-2"></i>
-          No Data Available
-        </h5>
-        <p className="mb-0">
-          No projects, tasks, or teams found. Please create some data to get
-          started.
-        </p>
-      </div>
-    );
-  }
-
-  // Show loading state while critical data is loading
+  // ✅ FIX 2: Simplified loading logic - only show loader during initial load
   if (loadingStatus.isLoading && !loadingStatus.criticalLoaded) {
-    console.log("MDDashboard: Still loading critical data", { loadingStatus });
+    console.log("MDDashboard: Loading initial data...");
     return <ComponentLoader text="Loading company dashboard..." />;
   }
 
-  // Show partial loading state
-  if (loadingStatus.isPartiallyLoaded) {
-    console.log("MDDashboard: Partially loaded", { loadingStatus });
-  }
-
+  // ✅ FIX 3: Always render dashboard after loading - 0 data is valid for MD
   console.log("MDDashboard: Rendering with data", {
-    totalProjects: projects?.length,
-    totalTasks: tasks?.length,
-    totalTeams: teams?.length,
+    totalProjects: projects?.length || 0,
+    totalTasks: tasks?.length || 0,
+    totalTeams: teams?.length || 0,
   });
 
-  // Calculate company-wide metrics
+  // Calculate company-wide metrics - handle empty arrays gracefully
   const totalProjects = projects?.length || 0;
   const activeProjects =
     projects?.filter((p) => p.status === "active").length || 0;
@@ -436,7 +401,12 @@ const MDDashboard = () => {
               {projects.length === 0 ? (
                 <div className="text-center py-4">
                   <i className="fas fa-folder-open fa-3x text-muted mb-3"></i>
-                  <p className="text-muted">No projects found</p>
+                  <h5>No Projects Yet</h5>
+                  <p className="text-muted">No projects have been created yet. Start by creating your first project.</p>
+                  <a href="/projects" className="btn btn-primary">
+                    <i className="fas fa-plus me-2"></i>
+                    Create Project
+                  </a>
                 </div>
               ) : (
                 <div className="table-responsive">
@@ -533,7 +503,12 @@ const MDDashboard = () => {
               {teams.length === 0 ? (
                 <div className="text-center py-4">
                   <i className="fas fa-users fa-3x text-muted mb-3"></i>
-                  <p className="text-muted">No teams found</p>
+                  <h5>No Teams Yet</h5>
+                  <p className="text-muted">No teams have been created yet. Start by creating your first team.</p>
+                  <a href="/teams" className="btn btn-info">
+                    <i className="fas fa-plus me-2"></i>
+                    Create Team
+                  </a>
                 </div>
               ) : (
                 <div className="list-group list-group-flush">

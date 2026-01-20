@@ -98,3 +98,7 @@ Thumbs.db
 
 # Ignore specific file in root
 implementation_summary.md
+
+# Ignore all .md files except README.md
+*.md
+!README.md

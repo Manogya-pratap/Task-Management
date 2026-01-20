@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import api from "../services/api";
 import { StatusIndicator } from "./shared/StatusIndicator";
 import "react-datepicker/dist/react-datepicker.css";
+import "./TaskForm.css";
 
 const TaskForm = ({
   show,
@@ -285,13 +286,31 @@ const TaskForm = ({
     onHide();
   };
 
+  // Lock body scroll when modal is open to prevent layout shifts
+  useEffect(() => {
+    if (show) {
+      // Lock body scroll
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = "0px"; // Prevent scrollbar jump
+    } else {
+      // Restore body scroll
+      document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "";
+    }
+
+    // Cleanup on unmount
+    return () => {
+      document.body.style.overflow = "auto";
+      document.body.style.paddingRight = "";
+    };
+  }, [show]);
+
   if (!show) return null;
 
   return (
     <div
       className="modal show d-block task-form-modal"
       tabIndex="-1"
-      style={{ backgroundColor: "rgba(0,0,0,0.6)" }}
     >
       <div className="modal-dialog modal-lg">
         <div className="modal-content task-form-content">
@@ -637,379 +656,6 @@ const TaskForm = ({
           </div>
         </div>
       </div>
-
-      {/* Enhanced Styling */}
-      <style jsx>{`
-        .task-form-modal .modal-content {
-          border: none;
-          border-radius: 1rem;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-          overflow: hidden;
-          background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        }
-
-        .task-form-header {
-          background: linear-gradient(
-            135deg,
-            var(--primary-maroon, #800020) 0%,
-            var(--primary-maroon-light, #a0002a) 100%
-          );
-          border: none;
-          padding: 1.5rem;
-        }
-
-        .task-form-body {
-          padding: 2rem;
-          background: rgba(255, 255, 255, 0.95);
-        }
-
-        /* Responsive form layout */
-        @media (max-width: 768px) {
-          .task-form-body {
-            padding: 1rem;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .task-form-body {
-            padding: 0.75rem;
-          }
-        }
-
-        .task-form-footer {
-          background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-          border: none;
-          padding: 1.5rem;
-        }
-
-        @media (max-width: 768px) {
-          .task-form-footer {
-            padding: 1rem;
-          }
-        }
-
-        .task-form-label {
-          font-weight: 600;
-          color: var(--primary-maroon, #800020);
-          margin-bottom: 0.5rem;
-          font-size: 0.9rem;
-        }
-
-        @media (max-width: 480px) {
-          .task-form-label {
-            font-size: 0.85rem;
-            margin-bottom: 0.4rem;
-          }
-        }
-
-        /* Responsive form grid */
-        .form-row {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        @media (min-width: 768px) {
-          .form-row {
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-          }
-        }
-
-        @media (min-width: 992px) {
-          .form-row {
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 2rem;
-          }
-        }
-
-        /* Responsive form controls */
-        .task-form-input,
-        .task-form-select,
-        .task-form-textarea,
-        .task-form-datepicker {
-          border: 2px solid #e9ecef;
-          border-radius: 0.75rem;
-          padding: 0.75rem 1rem;
-          transition: all 0.3s ease;
-          background: rgba(255, 255, 255, 0.9);
-          font-size: 1rem;
-        }
-
-        @media (max-width: 768px) {
-          .task-form-input,
-          .task-form-select,
-          .task-form-textarea,
-          .task-form-datepicker {
-            padding: 0.6rem 0.8rem;
-            font-size: 0.9rem;
-            min-height: 44px; /* Touch-friendly */
-          }
-        }
-
-        @media (max-width: 480px) {
-          .task-form-input,
-          .task-form-select,
-          .task-form-textarea,
-          .task-form-datepicker {
-            padding: 0.5rem 0.6rem;
-            font-size: 0.85rem;
-            min-height: 48px; /* Larger touch target */
-          }
-        }
-
-        /* Focus states */
-        .task-form-input:focus,
-        .task-form-select:focus,
-        .task-form-textarea:focus,
-        .task-form-datepicker:focus {
-          border-color: var(--primary-maroon, #800020);
-          box-shadow: 0 0 0 0.2rem rgba(128, 0, 32, 0.25);
-          background: rgba(255, 255, 255, 1);
-          transform: translateY(-1px);
-        }
-
-        /* Responsive buttons */
-        .btn {
-          padding: 0.75rem 1.5rem;
-          font-size: 1rem;
-          font-weight: 500;
-          border-radius: 0.5rem;
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          min-height: 44px;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        @media (max-width: 768px) {
-          .btn {
-            width: 100%;
-            padding: 1rem;
-            font-size: 1rem;
-            min-height: 48px;
-            margin-bottom: 0.5rem;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .btn {
-            padding: 0.875rem;
-            font-size: 0.9rem;
-            min-height: 52px;
-          }
-        }
-
-        @media (min-width: 769px) {
-          .btn {
-            width: auto;
-            min-width: 120px;
-            margin-bottom: 0;
-          }
-        }
-
-        /* Button variants */
-        .btn-primary {
-          background: linear-gradient(
-            135deg,
-            var(--primary-maroon, #800020) 0%,
-            var(--primary-maroon-light, #a0002a) 100%
-          );
-          border: 1px solid var(--primary-maroon, #800020);
-          color: white;
-        }
-
-        .btn-primary:hover {
-          background: linear-gradient(
-            135deg,
-            var(--primary-maroon-light, #a0002a) 0%,
-            var(--primary-maroon-dark, #b00030) 100%
-          );
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(128, 0, 32, 0.3);
-        }
-
-        .btn-secondary {
-          background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
-          border: 1px solid #6c757d;
-          color: white;
-        }
-
-        .btn-secondary:hover {
-          background: linear-gradient(135deg, #495057 0%, #343a40 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
-        }
-
-        /* Form sections */
-        .task-form-section {
-          background: rgba(255, 255, 255, 0.5);
-          border-radius: 0.75rem;
-          padding: 1.5rem;
-          margin-bottom: 1rem;
-          border: 1px solid rgba(0, 0, 0, 0.1);
-        }
-
-        @media (max-width: 768px) {
-          .task-form-section {
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-          }
-        }
-
-        /* Alert responsiveness */
-        .task-form-alert {
-          border: none;
-          border-radius: 0.75rem;
-          border-left: 4px solid #dc3545;
-          background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-          padding: 1rem;
-          margin-bottom: 1rem;
-        }
-
-        @media (max-width: 768px) {
-          .task-form-alert {
-            padding: 0.75rem;
-            margin-bottom: 0.75rem;
-            font-size: 0.9rem;
-          }
-        }
-
-        /* Modal responsiveness */
-        .modal-dialog {
-          margin: 1rem;
-          max-width: 90vw;
-        }
-
-        @media (max-width: 768px) {
-          .modal-dialog {
-            margin: 0.5rem;
-            max-width: 95vw;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .modal-dialog {
-            margin: 0.25rem;
-            max-width: 98vw;
-          }
-        }
-
-        /* Form validation */
-        .invalid-feedback {
-          font-size: 0.875rem;
-          padding: 0.5rem;
-          margin-top: 0.5rem;
-          border-radius: 0.5rem;
-        }
-
-        @media (max-width: 480px) {
-          .invalid-feedback {
-            font-size: 0.8rem;
-            padding: 0.4rem;
-          }
-        }
-
-        .task-form-text {
-          color: #6c757d;
-          font-size: 0.875rem;
-        }
-
-        .task-assignment-container {
-          position: relative;
-        }
-
-        .task-tags-preview {
-          max-height: 100px;
-          overflow-y: auto;
-        }
-
-        .task-tag-badge {
-          background: linear-gradient(
-            135deg,
-            var(--primary-maroon, #800020) 0%,
-            var(--primary-maroon-light, #a0002a) 100%
-          ) !important;
-          color: white;
-          border-radius: 1rem;
-          padding: 0.25rem 0.75rem;
-          font-size: 0.75rem;
-          font-weight: 500;
-        }
-
-        .task-form-btn-primary {
-          background: linear-gradient(
-            135deg,
-            var(--primary-maroon, #800020) 0%,
-            var(--primary-maroon-light, #a0002a) 100%
-          );
-          border: none;
-          border-radius: 0.75rem;
-          padding: 0.75rem 1.5rem;
-          font-weight: 600;
-          transition: all 0.3s ease;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .task-form-btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(128, 0, 32, 0.3);
-        }
-
-        .task-form-btn-primary::before {
-          content: "";
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.2),
-            transparent
-          );
-          transition: left 0.5s ease;
-        }
-
-        .task-form-btn-primary:hover::before {
-          left: 100%;
-        }
-
-        .task-form-btn-secondary {
-          border: 2px solid #6c757d;
-          border-radius: 0.75rem;
-          padding: 0.75rem 1.5rem;
-          font-weight: 600;
-          transition: all 0.3s ease;
-          background: transparent;
-        }
-
-        .task-form-btn-secondary:hover {
-          background: #6c757d;
-          transform: translateY(-1px);
-        }
-
-        .task-form-alert {
-          border: none;
-          border-radius: 0.75rem;
-          border-left: 4px solid #dc3545;
-          background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-        }
-
-        @media (max-width: 768px) {
-          .task-form-body {
-            padding: 1rem;
-          }
-
-          .task-form-header,
-          .task-form-footer {
-            padding: 1rem;
-          }
-        }
-      `}</style>
     </div>
   );
 };

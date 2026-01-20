@@ -30,7 +30,7 @@ const ProjectManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    status: "planning",
+    status: "draft",  // Default to draft for easier project creation
     priority: "medium",
     startDate: "",
     endDate: "",
@@ -41,7 +41,8 @@ const ProjectManagement = () => {
   });
 
   const projectStatuses = [
-    { value: "planning", label: "Planning", color: "secondary" },
+    { value: "draft", label: "Draft", color: "secondary" },
+    { value: "planning", label: "Planning", color: "info" },
     { value: "active", label: "Active", color: "primary" },
     { value: "on_hold", label: "On Hold", color: "warning" },
     { value: "completed", label: "Completed", color: "success" },
@@ -85,7 +86,7 @@ const ProjectManagement = () => {
       setFormData({
         name: "",
         description: "",
-        status: "planning",
+        status: "draft",  // Default to draft
         priority: "medium",
         startDate: "",
         endDate: "",
@@ -131,15 +132,24 @@ const ProjectManagement = () => {
     setError(null);
 
     try {
+      // 🔥 NORMALIZE PAYLOAD TO MATCH BACKEND EXPECTATIONS
       const submitData = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        status: formData.status,           // Frontend status (planning, active, etc.)
+        priority: formData.priority,
+        startDate: formData.startDate,     // Keep camelCase for validation middleware
+        endDate: formData.endDate,         // Keep camelCase for validation middleware
+        budget: formData.budget ? parseFloat(formData.budget) : undefined,
+        teamId: formData.teamId || null,
+        assignedMembers: formData.assignedMembers,
         tags: formData.tags
           .split(",")
           .map((tag) => tag.trim())
           .filter((tag) => tag),
       };
 
-      console.log("Form submitted with data:", submitData);
+      console.log("Form submitted with normalized data:", submitData);
       console.log("Editing project:", editingProject);
 
       if (editingProject) {
@@ -152,7 +162,9 @@ const ProjectManagement = () => {
           await fetchProjects(true);
         }, 100);
       } else {
-        await api.post("/projects", submitData);
+        console.log("Creating new project with payload:", submitData);
+        const response = await api.post("/projects", submitData);
+        console.log("Project creation response:", response.data);
         setSuccess("Project created successfully!");
       }
 
@@ -164,7 +176,19 @@ const ProjectManagement = () => {
       }, 1500);
     } catch (err) {
       console.error("Error saving project:", err);
-      setError(err.response?.data?.message || "Failed to save project");
+      console.error("Error response:", err.response?.data);
+      
+      // Show detailed error message
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.error ||
+                          "Failed to save project";
+      setError(errorMessage);
+      
+      // If validation errors, show them
+      if (err.response?.data?.errors) {
+        const validationErrors = err.response.data.errors.map(e => e.msg).join(", ");
+        setError(`Validation errors: ${validationErrors}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -463,24 +487,40 @@ const ProjectManagement = () => {
             <Row>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Start Date</Form.Label>
+                  <Form.Label>
+                    Start Date {formData.status !== "draft" && "*"}
+                  </Form.Label>
                   <Form.Control
                     type="date"
                     name="startDate"
                     value={formData.startDate}
                     onChange={handleInputChange}
+                    required={formData.status !== "draft"}
                   />
+                  {formData.status === "draft" && (
+                    <Form.Text className="text-muted">
+                      Optional for draft projects
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>End Date</Form.Label>
+                  <Form.Label>
+                    End Date {formData.status !== "draft" && "*"}
+                  </Form.Label>
                   <Form.Control
                     type="date"
                     name="endDate"
                     value={formData.endDate}
                     onChange={handleInputChange}
+                    required={formData.status !== "draft"}
                   />
+                  {formData.status === "draft" && (
+                    <Form.Text className="text-muted">
+                      Optional for draft projects
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
             </Row>

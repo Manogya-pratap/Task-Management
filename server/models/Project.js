@@ -25,13 +25,19 @@ const projectSchema = new mongoose.Schema(
     },
     start_date: {
       type: Date,
-      required: [true, "Start date is required"],
+      required: function () {
+        return this.status !== "Draft";
+      },
     },
     deadline: {
       type: Date,
-      required: [true, "Deadline is required"],
+      required: function () {
+        return this.status !== "Draft";
+      },
       validate: {
         validator: function (value) {
+          // Skip validation for Draft projects
+          if (this.status === "Draft") return true;
           return value > this.start_date;
         },
         message: "Deadline must be after start date",
@@ -41,10 +47,10 @@ const projectSchema = new mongoose.Schema(
       type: String,
       required: [true, "Project status is required"],
       enum: {
-        values: ["Not Started", "In Progress", "Completed"],
-        message: "Status must be one of: Not Started, In Progress, Completed",
+        values: ["Draft", "Not Started", "In Progress", "Completed"],
+        message: "Status must be one of: Draft, Not Started, In Progress, Completed",
       },
-      default: "Not Started",
+      default: "Draft",
     },
     progress: {
       type: Number,

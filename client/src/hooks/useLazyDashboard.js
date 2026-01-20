@@ -36,6 +36,7 @@ export const useLazyDashboard = () => {
     tasks: false,
     teams: false,
     users: false,
+    initialized: false, // ✅ Add initialization flag
   });
 
   const [loadedSections, setLoadedSections] = useState({
@@ -109,34 +110,41 @@ export const useLazyDashboard = () => {
     ]
   );
 
-  // Initialize lazy loading
+  // ✅ FIX 4: Initialize lazy loading with proper memoization
   const initializeDashboard = useCallback(async () => {
+    // Prevent multiple initializations
+    if (loadedSectionsRef.current.initialized) {
+      console.log('Dashboard already initialized, skipping');
+      return;
+    }
+    
     console.log('initializeDashboard called');
+    loadedSectionsRef.current.initialized = true;
     
     // Load critical data first
-    if (!loadedSectionsRef.current.projects && (!projects || projects.length === 0)) {
+    if (!loadedSectionsRef.current.projects) {
       await loadSection("projects", PRIORITY_LEVELS.CRITICAL);
     }
 
     // Load high priority data
-    if (!loadedSectionsRef.current.teams && (!teams || teams.length === 0)) {
+    if (!loadedSectionsRef.current.teams) {
       await loadSection("teams", PRIORITY_LEVELS.HIGH);
     }
 
     // Load medium priority data with delay
     setTimeout(() => {
-      if (!loadedSectionsRef.current.tasks && (!tasks || tasks.length === 0)) {
+      if (!loadedSectionsRef.current.tasks) {
         loadSection("tasks", PRIORITY_LEVELS.MEDIUM);
       }
     }, 500);
 
     // Load low priority data last
     setTimeout(() => {
-      if (!loadedSectionsRef.current.users && (!users || users.length === 0)) {
+      if (!loadedSectionsRef.current.users && user && ["managing_director", "it_admin"].includes(user.role)) {
         loadSection("users", PRIORITY_LEVELS.LOW);
       }
     }, 1000);
-  }, [loadSection]);
+  }, [loadSection, user]);
 
   // Check if dashboard is ready
   const isDashboardReady = useCallback(() => {
@@ -148,22 +156,22 @@ export const useLazyDashboard = () => {
     );
   }, [projects, loading.projects, lazyLoading.projects]);
 
-  // Get loading status for UI
+  // ✅ FIX 5: Improved loading status - treat empty arrays as valid data
   const getLoadingStatus = useCallback(() => {
     const sections = ["projects", "teams", "tasks", "users"];
     const isLoading = sections.some(
       (section) => loading[section] || lazyLoading[section]
     );
-    const hasData = sections.some((section) => {
-      const data = { projects, teams, tasks, users }[section];
-      return data && data.length > 0;
-    });
+    
+    // ✅ For MD users, empty data is valid - don't treat as "no data"
+    const hasData = loadedSectionsRef.current.projects || loadedSectionsRef.current.teams || loadedSectionsRef.current.tasks;
+    const criticalLoaded = loadedSectionsRef.current.projects;
 
     return {
       isLoading,
       hasData,
-      isPartiallyLoaded: hasData && !isDashboardReady(),
-      criticalLoaded: projects && projects.length > 0,
+      isPartiallyLoaded: hasData && isLoading,
+      criticalLoaded,
       sections: {
         projects: loading.projects || lazyLoading.projects,
         teams: loading.teams || lazyLoading.teams,
@@ -171,7 +179,7 @@ export const useLazyDashboard = () => {
         users: loading.users || lazyLoading.users,
       },
     };
-  }, [loading, lazyLoading, projects, teams, tasks, users, isDashboardReady]);
+  }, [loading, lazyLoading]);
 
   // Force reload specific section
   const reloadSection = useCallback(

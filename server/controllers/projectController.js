@@ -2,9 +2,62 @@ const Project = require("../models/Project");
 const Task = require("../models/Task");
 const Team = require("../models/Team");
 const User = require("../models/User");
+const Department = require("../models/Department");
 const { catchAsync } = require("../utils/catchAsync");
 const AppError = require("../utils/appError");
 const { logDataChange, logAccessDenied } = require("../middleware/audit");
+
+/**
+ * 🔥 HELPER FUNCTIONS FOR PROJECT CREATION
+ */
+
+// Status normalizer - maps frontend status to backend enum
+function normalizeStatus(status) {
+  if (!status) return "Draft";
+  
+  const statusMap = {
+    draft: "Draft",
+    planning: "Not Started", 
+    active: "In Progress",
+    completed: "Completed",
+    "in_progress": "In Progress",
+    "not_started": "Not Started",
+  };
+  
+  return statusMap[status?.toLowerCase()] || "Draft";
+}
+
+// Department resolver with role-aware fallback
+async function resolveDepartment({ deptId, user }) {
+  // If department ID is provided, use it
+  if (deptId) {
+    const dept = await Department.findById(deptId);
+    if (!dept) {
+      throw new Error("Invalid department ID");
+    }
+    return deptId;
+  }
+  
+  // Team Lead → use their own department
+  if (user.role === "team_lead" && user.departmentId) {
+    return user.departmentId;
+  }
+  
+  // Admin / MD → use default department or first available
+  const defaultDept = await Department.findOne({ 
+    $or: [
+      { dept_name: "IT/Software" },
+      { name: "IT/Software" },
+      { is_active: true }
+    ]
+  }).sort({ dept_name: 1 });
+  
+  if (!defaultDept) {
+    throw new Error("No departments available. Please create a department first.");
+  }
+  
+  return defaultDept._id;
+}
 
 /**
  * Get all projects with role-based filtering
@@ -84,9 +137,59 @@ const getProject = catchAsync(async (req, res, next) => {
  * Create new project with task sections initialization
  */
 const createProject = catchAsync(async (req, res, next) => {
+  const {
+    name,
+    description,
+    status,
+    priority,
+    startDate,
+    endDate,
+    budget,
+    teamId,
+    assignedMembers,
+    tags,
+  } = req.body;
+
+  console.log("Creating project with payload:", req.body);
+
+  // 🔥 STEP 1: Resolve department (with fallback)
+  let dept_id;
+  try {
+    dept_id = await resolveDepartment({
+      deptId: req.body.departmentId,
+      user: req.user,
+    });
+  } catch (error) {
+    return next(new AppError(error.message, 400));
+  }
+
+  // 🔥 STEP 2: Normalize status from frontend to backend enum
+  const normalizedStatus = normalizeStatus(status);
+
+  // 🔥 STEP 3: Map frontend payload to backend schema
+  const projectData = {
+    name,
+    description,
+    dept_id,                          // REQUIRED - resolved above
+    created_by: req.user._id,         // REQUIRED - auto-filled
+    start_date: normalizedStatus === "Draft" ? null : startDate,  // REQUIRED (unless Draft)
+    deadline: normalizedStatus === "Draft" ? null : endDate,      // REQUIRED (unless Draft)
+    status: normalizedStatus,         // REQUIRED - normalized
+    priority,
+    // Legacy fields for backward compatibility
+    startDate,
+    endDate,
+    teamId,
+    createdBy: req.user._id,
+    assignedMembers,
+    tags,
+  };
+
+  console.log("Normalized project data:", projectData);
+
   // Validate team assignment (only if teamId is provided)
-  if (req.body.teamId) {
-    const team = await Team.findById(req.body.teamId);
+  if (teamId) {
+    const team = await Team.findById(teamId);
     if (!team) {
       return next(new AppError("Invalid team ID", 400));
     }
@@ -94,34 +197,28 @@ const createProject = catchAsync(async (req, res, next) => {
     // Check if user can create projects for this team
     if (
       req.user.role === "team_lead" &&
-      !req.user.teamId.equals(req.body.teamId)
+      !req.user.teamId.equals(teamId)
     ) {
       await logAccessDenied(
         req,
         "Team",
-        req.body.teamId,
+        teamId,
         `Access denied to create project for team: ${team.name}`
       );
       return next(
         new AppError("You can only create projects for your own team", 403)
       );
     }
-  } else {
-    // For MD/IT Admin, teamId is optional
-    req.body.teamId = null;
   }
 
-  // Set creator
-  req.body.createdBy = req.user._id;
-
   // Validate assigned members belong to the team
-  if (req.body.assignedMembers && req.body.assignedMembers.length > 0) {
+  if (assignedMembers && assignedMembers.length > 0) {
     const members = await User.find({
-      _id: { $in: req.body.assignedMembers },
-      teamId: req.body.teamId,
+      _id: { $in: assignedMembers },
+      teamId: teamId,
     });
 
-    if (members.length !== req.body.assignedMembers.length) {
+    if (members.length !== assignedMembers.length) {
       return next(
         new AppError(
           "All assigned members must belong to the project team",
@@ -132,13 +229,14 @@ const createProject = catchAsync(async (req, res, next) => {
   }
 
   // Create project using static method that initializes task sections
-  const project = await Project.createProject(req.body);
+  const project = await Project.createProject(projectData);
 
   // Populate the created project
   await project.populate([
     { path: "teamId", select: "name department" },
     { path: "createdBy", select: "firstName lastName" },
     { path: "assignedMembers", select: "firstName lastName role" },
+    { path: "dept_id", select: "dept_name name" },
   ]);
 
   // Audit log for project creation

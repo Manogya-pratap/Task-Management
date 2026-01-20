@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { AppProvider } from "./contexts/AppContext";
 import { SocketProvider } from "./contexts/SocketContext";
 import ProtectedRoute from "./components/ProtectedRoute";
+import LandingPage from "./components/LandingPageWithLogin";
 import LoginForm from "./components/LoginForm";
 import Layout from "./components/Layout";
 import ITAdminDashboard from "./components/dashboards/ITAdminDashboard";
@@ -92,12 +93,23 @@ const AppContent = () => {
 
   return (
     <Routes>
+      {/* Landing Page Route */}
+      <Route
+        path="/"
+        element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <LandingPage />
+        }
+      />
+      
+      {/* Login Route */}
       <Route
         path="/login"
         element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginForm />
         }
       />
+      
+      {/* Dashboard Route */}
       <Route
         path="/dashboard"
         element={
@@ -334,10 +346,11 @@ const AppContent = () => {
           </ProtectedRoute>
         }
       />
+      {/* Catch all route - redirect to landing page */}
       <Route
-        path="/"
+        path="*"
         element={
-          <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />
+          <Navigate to={isAuthenticated ? "/dashboard" : "/"} replace />
         }
       />
     </Routes>

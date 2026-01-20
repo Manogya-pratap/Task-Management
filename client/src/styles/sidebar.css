@@ -1,4 +1,43 @@
-/* Custom Sidebar Styles */
+/* Custom Sidebar Styles - NO ANIMATIONS TO PREVENT FLICKERING */
+
+/* CRITICAL: Prevent sidebar from affecting modal layout */
+.sidebar {
+  /* Isolate sidebar layout changes */
+  contain: layout style paint !important;
+  will-change: auto !important;
+}
+
+/* When modal is open, disable sidebar hover effects completely */
+body:has(.task-form-modal) .sidebar .sidebar-link:hover {
+  background: inherit !important;
+  border: inherit !important;
+}
+
+body:has(.task-form-modal) .sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Remove all animations and transitions globally for sidebar */
+.sidebar *,
+.sidebar *::before,
+.sidebar *::after {
+  -webkit-transform: none !important;
+  -moz-transform: none !important;
+  -ms-transform: none !important;
+  -o-transform: none !important;
+  transform: none !important;
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -ms-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+  -webkit-animation: none !important;
+  -moz-animation: none !important;
+  -ms-animation: none !important;
+  -o-animation: none !important;
+  animation: none !important;
+}
+
 .sidebar {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.3) rgba(255, 255, 255, 0.1);
@@ -15,21 +54,13 @@
 }
 
 .sidebar::-webkit-scrollbar-thumb {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.3) 0%,
-    rgba(255, 255, 255, 0.2) 100%
-  );
+  background: rgba(255, 255, 255, 0.3);
   border-radius: 4px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.5) 0%,
-    rgba(255, 255, 255, 0.3) 100%
-  );
+  background: rgba(255, 255, 255, 0.5);
 }
 
 .sidebar::-webkit-scrollbar-corner {
@@ -46,32 +77,7 @@
 
 .sidebar-section {
   margin-bottom: 16px;
-  opacity: 0;
-  animation: fadeInUp 0.5s ease forwards;
-}
-
-.sidebar-section:nth-child(1) {
-  animation-delay: 0.1s;
-}
-.sidebar-section:nth-child(2) {
-  animation-delay: 0.2s;
-}
-.sidebar-section:nth-child(3) {
-  animation-delay: 0.3s;
-}
-.sidebar-section:nth-child(4) {
-  animation-delay: 0.4s;
-}
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  opacity: 1;
 }
 
 .sidebar-section-header {
@@ -88,89 +94,31 @@
   padding: 14px 16px !important;
   margin: 3px 8px;
   border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  overflow: hidden;
-  transform: scale(1.02);
-  background: linear-gradient(135deg, #800020 0%, #a0002a 100%) !important;
-  box-shadow: 0 4px 12px rgba(128, 0, 32, 0.4) !important;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-/* Add shimmer effect to all sidebar links */
-.sidebar-link::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: left 0.6s ease;
-  z-index: 0;
-}
-
-.sidebar-link:hover::before {
-  left: 100%;
-}
-
-/* Ensure content stays above shimmer */
-.sidebar-link i,
-.sidebar-link div {
-  position: relative;
-  z-index: 1;
-}
-
-/* Enhanced hover effects for all buttons */
 .sidebar-link:hover {
-  transform: translateX(6px) scale(1.05);
-  background: linear-gradient(135deg, #a0002a 0%, #b00030 100%) !important;
+  background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.4);
-  box-shadow: 0 6px 20px rgba(128, 0, 32, 0.5) !important;
 }
 
-/* Enhanced active state */
 .sidebar-link.active {
-  background: linear-gradient(135deg, #900025 0%, #c00035 100%) !important;
+  background: rgba(255, 255, 255, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.5);
   border-left: 4px solid #ffffff;
-  box-shadow: 0 8px 25px rgba(128, 0, 32, 0.6) !important;
-  transform: translateX(4px) scale(1.03);
 }
 
-.sidebar-link.create-employee-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transition: left 0.6s ease;
-}
-
-.sidebar-link.create-employee-btn:hover::before {
-  left: 100%;
+.sidebar-link.create-employee-btn {
+  background: #007bff;
 }
 
 .sidebar-link.create-employee-btn:hover {
-  background: linear-gradient(135deg, #a0002a 0%, #b00030 100%) !important;
-  box-shadow: 0 6px 20px rgba(128, 0, 32, 0.5) !important;
-  transform: translateX(6px) scale(1.05) !important;
-  border: 1px solid rgba(255, 255, 255, 0.4) !important;
+  background: #0056b3;
 }
 
 .sidebar.collapsed .sidebar-link {
@@ -188,19 +136,19 @@
   margin-top: auto;
   padding: 16px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
+  background: #800020;
 }
 
 .user-profile {
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
+  background: #800020;
 }
 
 .sidebar-header {
   padding: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
+  background: #800020;
 }
 
 /* Responsive Sidebar Styles */
@@ -208,7 +156,6 @@
   .sidebar {
     width: 280px !important;
     transform: translateX(-100%);
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1040;
     border-radius: 0 16px 16px 0;
   }
@@ -226,14 +173,13 @@
     width: 280px !important;
   }
 
-  /* Mobile menu toggle button - smaller corner */
   .mobile-menu-toggle {
     display: block !important;
     position: fixed;
     top: 15px;
     left: 15px;
     z-index: 1050;
-    background: linear-gradient(135deg, #800020 0%, #a0002a 100%);
+    background: #800020;
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 6px;
     padding: 8px 10px;
@@ -241,27 +187,18 @@
     color: white;
     font-size: 16px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     width: 36px;
     height: 36px;
   }
 
   .mobile-menu-toggle:hover {
-    background: linear-gradient(135deg, #a0002a 0%, #b00030 100%);
-    transform: scale(1.05);
-    box-shadow: 0 4px 15px rgba(128, 0, 32, 0.5);
+    background: #a0002a;
   }
 
-  .mobile-menu-toggle:active {
-    transform: scale(0.95);
-  }
-
-  /* Hide desktop toggle on mobile */
   .sidebar-toggle-btn {
     display: none !important;
   }
 
-  /* Adjust main content for mobile */
   .layout-container {
     padding-left: 0 !important;
   }
@@ -271,7 +208,6 @@
     padding: 15px !important;
   }
 
-  /* Sidebar content adjustments for mobile */
   .sidebar-header {
     padding: 20px 16px !important;
     text-align: center !important;
@@ -324,7 +260,6 @@
     line-height: 1.3;
   }
 
-  /* Mobile scrollbar improvements */
   .sidebar::-webkit-scrollbar {
     width: 4px;
   }
@@ -390,7 +325,6 @@
   }
 }
 
-/* Tablet adjustments */
 @media (min-width: 576px) and (max-width: 768px) {
   .sidebar {
     width: 260px !important;
@@ -419,7 +353,6 @@
   }
 }
 
-/* Responsive Top Navbar Styles */
 @media (max-width: 768px) {
   .top-navbar {
     height: 50px !important;
@@ -473,7 +406,6 @@
   }
 }
 
-/* Tablet adjustments */
 @media (min-width: 576px) and (max-width: 768px) {
   .top-navbar {
     height: 55px !important;
@@ -504,7 +436,6 @@
   }
 }
 
-/* Main content responsive adjustments */
 @media (max-width: 768px) {
   .main-content {
     margin-left: 0 !important;
@@ -541,13 +472,11 @@
   }
 }
 
-/* Ensure sidebar takes full height and is scrollable */
 .layout-container {
   height: 100vh;
   overflow: hidden;
 }
 
-/* Fix for collapsed state */
 .sidebar.collapsed {
   width: 80px !important;
 }
@@ -568,46 +497,4 @@
 .sidebar.collapsed .user-profile {
   text-align: center;
   padding: 16px 8px;
-}
-
-/* Sidebar Toggle Button Styles */
-.sidebar-toggle-btn {
-  position: relative;
-  overflow: hidden;
-}
-
-.sidebar-toggle-btn::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(128, 0, 32, 0.1),
-    transparent
-  );
-  transition: left 0.6s ease;
-}
-
-.sidebar-toggle-btn:hover::before {
-  left: 100%;
-}
-
-.sidebar-toggle-btn:active {
-  transform: scale(0.96) translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-}
-
-.sidebar-toggle-btn i {
-  position: relative;
-  z-index: 1;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  text-shadow: 0 1px 2px rgba(128, 0, 32, 0.2);
-}
-
-.sidebar-toggle-btn:hover i {
-  transform: rotate(90deg) scale(1.1);
 }

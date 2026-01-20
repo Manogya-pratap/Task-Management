@@ -102,7 +102,31 @@ export const AuthProvider = ({ children }) => {
         return { success: false, message: result.message };
       }
     } catch (error) {
-      const message = error.response?.data?.message || "Login failed";
+      console.error("Login error:", error);
+      
+      // Provide more specific error messages
+      let message = "Login failed. Please try again.";
+      
+      if (error.response?.status === 401) {
+        // Check the actual server message
+        const serverMessage = error.response?.data?.message;
+        if (serverMessage && serverMessage.includes('Incorrect username or password')) {
+          message = "Incorrect username or password";
+        } else {
+          message = "Invalid credentials. Please check your username and password.";
+        }
+      } else if (error.response?.status === 404) {
+        message = "User not found. Please check your username or contact your administrator.";
+      } else if (error.response?.status === 403) {
+        message = "Account is disabled. Please contact your administrator.";
+      } else if (error.response?.status >= 500) {
+        message = "Server error. Please try again later or contact support.";
+      } else if (error.code === 'NETWORK_ERROR' || !error.response) {
+        message = "Connection error. Please check your internet connection.";
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      }
+      
       setError(message);
       return { success: false, message };
     } finally {

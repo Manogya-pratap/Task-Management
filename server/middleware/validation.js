@@ -281,16 +281,24 @@ const validateProjectCreation = [
     .withMessage("Project name must be between 1 and 200 characters"),
 
   body("description")
+    .optional()
     .trim()
-    .isLength({ min: 1, max: 1000 })
-    .withMessage("Project description must be between 1 and 1000 characters"),
+    .isLength({ max: 1000 })
+    .withMessage("Project description cannot exceed 1000 characters"),
+
+  body("status")
+    .optional()
+    .isIn(["draft", "planning", "active", "completed", "in_progress", "not_started"])
+    .withMessage("Status must be one of: draft, planning, active, completed"),
 
   body("startDate")
+    .if(body("status").not().equals("draft"))
     .isISO8601()
     .withMessage("Start date must be a valid date")
     .toDate(),
 
   body("endDate")
+    .if(body("status").not().equals("draft"))
     .isISO8601()
     .withMessage("End date must be a valid date")
     .toDate()
@@ -300,6 +308,11 @@ const validateProjectCreation = [
       }
       return true;
     }),
+
+  body("departmentId")
+    .optional()
+    .isMongoId()
+    .withMessage("Department ID must be a valid MongoDB ObjectId"),
 
   body("teamId")
     .optional()

@@ -177,8 +177,6 @@ const TaskCalendar = ({
   };
 
   const handleCreateTask = (date) => {
-    console.log("handleCreateTask called for date:", date.format("YYYY-MM-DD"));
-
     // For employees, create a personal task without project requirement
     const newTask = {
       title: "",
@@ -192,14 +190,12 @@ const TaskCalendar = ({
       createdBy: user._id,
     };
 
-    console.log("Creating new task object:", newTask);
     setEditingTask(newTask);
     setShowTaskForm(true);
     setShowTaskModal(false);
   };
 
   const handleEditTask = (task) => {
-    console.log("handleEditTask called with task:", task);
     // Close any open modals first
     setShowTaskModal(false);
     setShowTaskDetail(false);
@@ -227,25 +223,15 @@ const TaskCalendar = ({
   };
 
   const handleTaskFormSubmit = async (taskData) => {
-    console.log("TaskCalendar: handleTaskFormSubmit called with:", taskData);
-    console.log("TaskCalendar: editingTask:", editingTask);
-
     try {
       let result;
       if (editingTask && editingTask._id) {
-        console.log("TaskCalendar: Updating existing task:", editingTask._id);
         result = await updateTask(editingTask._id, taskData);
       } else {
-        console.log("TaskCalendar: Creating new task:", taskData);
         result = await createTask(taskData);
       }
 
-      console.log("TaskCalendar: Task operation result:", result);
-
       if (result.success) {
-        console.log(
-          "TaskCalendar: Task operation successful, refreshing tasks"
-        );
         try {
           await fetchTasks();
         } catch (fetchError) {
@@ -263,7 +249,6 @@ const TaskCalendar = ({
             : "Task created successfully",
         });
       } else {
-        console.error("TaskCalendar: Task operation failed:", result.error);
         setError(result.error || "Failed to save task");
       }
     } catch (error) {
@@ -272,29 +257,17 @@ const TaskCalendar = ({
     }
   };
 
-  // Test function to verify calendar is working
-  const testCalendarClick = () => {
-    console.log("Calendar test function called");
-    const testDate = moment();
-    console.log("Testing with date:", testDate.format("YYYY-MM-DD"));
-    handleDateClick(testDate);
-  };
-
   const handleDateClick = (date) => {
-    console.log("Date clicked:", date.format("YYYY-MM-DD"));
+    // Prevent event bubbling and default behavior
     const dateTasks = getTasksForDate(date);
-    console.log("Tasks for date:", dateTasks.length);
 
     if (dateTasks.length === 0) {
       // Create new task for this date
-      console.log("Creating new task for date:", date.format("YYYY-MM-DD"));
       handleCreateTask(date);
     } else if (dateTasks.length === 1) {
-      console.log("Opening single task:", dateTasks[0]);
       handleTaskClick(dateTasks[0]);
     } else {
       // Show a list of tasks for this date
-      console.log("Showing multiple tasks:", dateTasks.length);
       setSelectedTask({
         isMultiple: true,
         date: date.format("YYYY-MM-DD"),
@@ -346,13 +319,6 @@ const TaskCalendar = ({
                     onClick={() => navigateMonth(1)}
                   >
                     <i className="fas fa-chevron-right"></i>
-                  </button>
-                  <button
-                    className="btn btn-outline-info ms-2"
-                    onClick={testCalendarClick}
-                    title="Test Calendar Click"
-                  >
-                    <i className="fas fa-bug"></i>
                   </button>
                 </div>
               </div>
@@ -451,12 +417,6 @@ const TaskCalendar = ({
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      console.log(
-                        "Calendar day clicked:",
-                        day.format("YYYY-MM-DD"),
-                        "Tasks:",
-                        dayTasks.length
-                      );
                       handleDateClick(day);
                     }}
                     style={{ cursor: "pointer", pointerEvents: "auto" }}
@@ -483,7 +443,6 @@ const TaskCalendar = ({
                             borderLeft: `3px solid ${priorityColors[task.priority]}`,
                           }}
                           onClick={(e) => {
-                            console.log("Task clicked:", task.title);
                             e.stopPropagation();
                             handleTaskClick(task);
                           }}
@@ -534,7 +493,6 @@ const TaskCalendar = ({
                   type="button"
                   className="btn-close"
                   onClick={() => {
-                    console.log("Close button clicked");
                     setShowTaskModal(false);
                     setSelectedTask(null);
                   }}
@@ -568,7 +526,6 @@ const TaskCalendar = ({
                             className="mb-1"
                             style={{ cursor: "pointer", color: "#007bff" }}
                             onClick={() => {
-                              console.log("Task title clicked:", task);
                               handleTaskClick(task);
                             }}
                           >
@@ -578,10 +535,6 @@ const TaskCalendar = ({
                             <button
                               className="btn btn-sm btn-outline-primary"
                               onClick={() => {
-                                console.log(
-                                  "Edit button clicked for task:",
-                                  task
-                                );
                                 handleEditTask(task);
                               }}
                               title="Edit Task"
@@ -772,74 +725,35 @@ const TaskCalendar = ({
 
       {/* Task Form Modal */}
       {showTaskForm && (
-        <div style={{ zIndex: 1050 }}>
-          {console.log(
-            "TaskCalendar: Rendering TaskForm with editingTask:",
-            editingTask
-          )}
-          <TaskForm
-            show={showTaskForm}
-            onHide={() => {
-              console.log("TaskForm cancelled");
-              setShowTaskForm(false);
-              setEditingTask(null);
-            }}
-            onSubmit={handleTaskFormSubmit}
-            task={editingTask}
-            projectId={projectId}
-            mode={editingTask?._id ? "edit" : "create"}
-          />
-          <style jsx>{`
-            .task-form-modal .modal-dialog {
-              max-width: 800px !important;
-              margin: 2rem auto !important;
-            }
-            .task-form-modal .modal-content {
-              max-height: 85vh !important;
-              overflow-y: auto !important;
-            }
-            .task-form-body {
-              max-height: 60vh !important;
-              overflow-y: auto !important;
-              padding: 1.5rem !important;
-            }
-          `}</style>
-        </div>
+        <TaskForm
+          show={showTaskForm}
+          onHide={() => {
+            setShowTaskForm(false);
+            setEditingTask(null);
+          }}
+          onSubmit={handleTaskFormSubmit}
+          task={editingTask}
+          projectId={projectId}
+          mode={editingTask?._id ? "edit" : "create"}
+        />
       )}
 
       {/* Task Detail Modal */}
       {showTaskDetail && selectedTask && (
-        <div style={{ zIndex: 1040 }}>
-          <TaskDetailModal
-            show={showTaskDetail}
-            onHide={() => {
-              setShowTaskDetail(false);
-              setSelectedTask(null);
-            }}
-            task={selectedTask}
-            onEdit={() => handleEditTask(selectedTask)}
-            onDelete={() => {
-              if (window.confirm(`Delete task: ${selectedTask.title}?`)) {
-                handleDeleteTask(selectedTask._id);
-              }
-            }}
-          />
-          <style jsx>{`
-            .modal-dialog {
-              max-width: 650px !important;
-              margin: 2rem auto !important;
+        <TaskDetailModal
+          show={showTaskDetail}
+          onHide={() => {
+            setShowTaskDetail(false);
+            setSelectedTask(null);
+          }}
+          task={selectedTask}
+          onEdit={() => handleEditTask(selectedTask)}
+          onDelete={() => {
+            if (window.confirm(`Delete task: ${selectedTask.title}?`)) {
+              handleDeleteTask(selectedTask._id);
             }
-            .modal-content {
-              max-height: 80vh !important;
-              overflow-y: auto !important;
-            }
-            .modal-body {
-              max-height: 60vh !important;
-              overflow-y: auto !important;
-              padding: 1.5rem !important;
-            }
-          `}</style>
-        </div>
+          }}
+        />
       )}
     </div>
   );
