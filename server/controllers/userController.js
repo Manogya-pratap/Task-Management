@@ -2,6 +2,7 @@ const User = require("../models/User");
 const Team = require("../models/Team");
 const AppError = require("../utils/appError");
 const { logAuthEvent } = require("../middleware/audit");
+const { validationResult } = require("express-validator");
 
 /**
  * Get all users with role-based filtering
@@ -113,6 +114,16 @@ const getUser = async (req, res, next) => {
  */
 const createUser = async (req, res, next) => {
   try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Validation failed',
+        errors: errors.array()
+      });
+    }
+    
     const {
       username,
       email,
@@ -160,6 +171,31 @@ const createUser = async (req, res, next) => {
       return next(new AppError("Username or email already exists", 400));
     }
 
+    // Handle department - convert department name to dept_id if needed
+    let dept_id = null;
+    if (department) {
+      // If department is provided as a string name, find the department ID
+      if (typeof department === 'string') {
+        const Department = require('../models/Department');
+        const dept = await Department.findOne({ 
+          $or: [
+            { dept_name: department },
+            { name: department }
+          ],
+          is_active: true 
+        });
+        
+        if (dept) {
+          dept_id = dept._id;
+        } else {
+          return next(new AppError(`Department "${department}" not found`, 400));
+        }
+      } else {
+        // If department is already an ObjectId
+        dept_id = department;
+      }
+    }
+
     // Prepare user data with proper field mapping
     const userData = {
       username,
@@ -170,8 +206,9 @@ const createUser = async (req, res, next) => {
       name: `${firstName} ${lastName}`,
       unique_id: username.toUpperCase(),
       role: role || "employee",
-      department,
-      teamId: req.body.teamId,
+      department, // Keep the original department string for legacy compatibility
+      dept_id, // Add the proper dept_id ObjectId
+      teamId: teamId && teamId !== '' ? teamId : null, // Convert empty string to null
       isActive: true,
       is_active: true
     };
@@ -350,11 +387,12 @@ const deleteUser = async (req, res, next) => {
     }
 
     // Soft delete - deactivate user instead of hard delete
-    await User.findByIdAndUpdate(id, {
-      isActive: false,
-      deactivatedAt: new Date(),
-      deactivatedBy: req.user._id,
-    });
+    const userToUpdate = await User.findById(id);
+    userToUpdate.is_active = false;
+    userToUpdate.isActive = false; // Explicitly set both fields
+    userToUpdate.deactivatedAt = new Date();
+    userToUpdate.deactivatedBy = req.user._id;
+    await userToUpdate.save();
 
     // Log user deletion
     await logAuthEvent(
@@ -469,12 +507,14 @@ const reactivateUser = async (req, res, next) => {
     }
 
     // Reactivate user
-    await User.findByIdAndUpdate(id, {
-      isActive: true,
-      reactivatedAt: new Date(),
-      reactivatedBy: req.user._id,
-      $unset: { deactivatedAt: 1, deactivatedBy: 1 }
-    });
+    const userToUpdate = await User.findById(id);
+    userToUpdate.is_active = true;
+    userToUpdate.isActive = true; // Explicitly set both fields
+    userToUpdate.reactivatedAt = new Date();
+    userToUpdate.reactivatedBy = req.user._id;
+    userToUpdate.deactivatedAt = undefined;
+    userToUpdate.deactivatedBy = undefined;
+    await userToUpdate.save();
 
     // Log user reactivation
     await logAuthEvent(

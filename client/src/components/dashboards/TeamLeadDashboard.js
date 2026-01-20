@@ -305,7 +305,7 @@ const TeamLeadDashboard = () => {
   // Calculate team metrics
   const totalProjects = teamProjects.length;
   const activeProjects = teamProjects.filter(
-    (p) => p.status === "active"
+    (p) => p.status === "In Progress"
   ).length;
   const totalTasks = teamTasks.length;
   const completedTasks = teamTasks.filter(

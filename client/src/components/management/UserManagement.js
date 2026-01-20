@@ -23,6 +23,7 @@ const UserManagement = () => {
   const [editingUser, setEditingUser] = useState(null);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [departments, setDepartments] = useState([]);
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -32,7 +33,7 @@ const UserManagement = () => {
     password: "",
     role: "",
     department: "",
-    teamId: null,
+    teamId: null, // Changed from null to null explicitly
     phone: "",
     isActive: true,
   });
@@ -44,18 +45,30 @@ const UserManagement = () => {
     { value: "managing_director", label: "Managing Director" },
   ];
 
-  const departments = [
-    "IT Development",
-    "Human Resources",
-    "Finance",
-    "Marketing",
-    "Operations",
-    "Sales",
-  ];
+  // Fetch departments from the API
+  const fetchDepartments = async () => {
+    try {
+      const response = await api.get('/departments');
+      const deptData = response.data.data?.departments || response.data.data || response.data;
+      setDepartments(deptData || []);
+    } catch (error) {
+      console.error('Error fetching departments:', error);
+      // Fallback to hardcoded departments if API fails
+      setDepartments([
+        { _id: 'it', dept_name: 'IT Development' },
+        { _id: 'hr', dept_name: 'Human Resources' },
+        { _id: 'finance', dept_name: 'Finance' },
+        { _id: 'marketing', dept_name: 'Marketing' },
+        { _id: 'operations', dept_name: 'Operations' },
+        { _id: 'sales', dept_name: 'Sales' },
+      ]);
+    }
+  };
 
   useEffect(() => {
     fetchUsers();
     fetchTeams();
+    fetchDepartments();
   }, [fetchUsers, fetchTeams]);
 
   const handleShowModal = (userToEdit = null) => {
@@ -69,7 +82,7 @@ const UserManagement = () => {
         password: "",
         role: userToEdit.role || "",
         department: userToEdit.department || "",
-        teamId: userToEdit.teamId?._id || null,
+        teamId: userToEdit.teamId?._id || null, // Ensure null instead of empty string
         phone: userToEdit.phone || "",
         isActive: userToEdit.isActive !== false,
       });
@@ -83,7 +96,7 @@ const UserManagement = () => {
         password: "",
         role: "",
         department: "",
-        teamId: null,
+        teamId: null, // Ensure null instead of empty string
         phone: "",
         isActive: true,
       });
@@ -102,10 +115,57 @@ const UserManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
+    
+    let processedValue = value;
+    
+    // Handle teamId specifically - convert empty string to null
+    if (name === 'teamId') {
+      processedValue = value === '' ? null : value;
+    }
+    
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" ? checked : processedValue,
     }));
+    
+    // Clear error when user starts typing
+    if (error) {
+      setError(null);
+    }
+  };
+
+  const validateForm = () => {
+    const errors = [];
+    
+    // Password validation for new users
+    if (!editingUser && formData.password) {
+      if (formData.password.length < 6) {
+        errors.push('Password must be at least 6 characters long');
+      }
+      if (!/(?=.*[a-z])/.test(formData.password)) {
+        errors.push('Password must contain at least one lowercase letter');
+      }
+      if (!/(?=.*[A-Z])/.test(formData.password)) {
+        errors.push('Password must contain at least one uppercase letter');
+      }
+      if (!/(?=.*\d)/.test(formData.password)) {
+        errors.push('Password must contain at least one number');
+      }
+    }
+    
+    // Username validation
+    if (formData.username && !/^[a-zA-Z0-9_]+$/.test(formData.username)) {
+      errors.push('Username can only contain letters, numbers, and underscores');
+    }
+    
+    // Department validation for employee roles
+    if (formData.role === 'employee' || formData.role === 'team_lead') {
+      if (!formData.department || formData.department.trim() === '') {
+        errors.push('Department is required for employees and team leads');
+      }
+    }
+    
+    return errors;
   };
 
   const handleSubmit = async (e) => {
@@ -113,17 +173,41 @@ const UserManagement = () => {
     setLoading(true);
     setError(null);
 
+    // Client-side validation
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      setError(`Validation failed: ${validationErrors.join(', ')}`);
+      setLoading(false);
+      return;
+    }
+
     try {
       const submitData = { ...formData };
       if (editingUser && !submitData.password) {
         delete submitData.password; // Don't update password if not provided
       }
 
+      // Handle empty teamId - convert empty string to null
+      if (submitData.teamId === '' || submitData.teamId === 'null') {
+        submitData.teamId = null;
+      }
+
+      // Remove empty phone field if not provided
+      if (submitData.phone === '') {
+        delete submitData.phone;
+      }
+
+      console.log('Submitting user data:', {
+        ...submitData,
+        password: submitData.password ? '[HIDDEN]' : 'Not provided'
+      });
+
       if (editingUser) {
         await api.patch(`/users/${editingUser._id}`, submitData);
         setSuccess("User updated successfully!");
       } else {
-        await api.post("/users", submitData);
+        const response = await api.post("/users", submitData);
+        console.log('User creation response:', response.data);
         setSuccess("User created successfully!");
       }
 
@@ -132,7 +216,15 @@ const UserManagement = () => {
         handleCloseModal();
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to save user");
+      console.error('User creation/update error:', err.response?.data);
+      
+      // Show detailed validation errors if available
+      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        const errorMessages = err.response.data.errors.map(error => error.msg).join(', ');
+        setError(`Validation failed: ${errorMessages}`);
+      } else {
+        setError(err.response?.data?.message || "Failed to save user");
+      }
     } finally {
       setLoading(false);
     }
@@ -455,7 +547,11 @@ const UserManagement = () => {
                     onChange={handleInputChange}
                     required
                     placeholder="Enter username"
+                    isInvalid={formData.username && !/^[a-zA-Z0-9_]+$/.test(formData.username)}
                   />
+                  <Form.Control.Feedback type="invalid">
+                    Username can only contain letters, numbers, and underscores
+                  </Form.Control.Feedback>
                 </Form.Group>
               </Col>
             </Row>
@@ -474,7 +570,21 @@ const UserManagement = () => {
                     onChange={handleInputChange}
                     required={!editingUser}
                     placeholder="Enter password"
+                    isInvalid={!editingUser && formData.password && (
+                      formData.password.length < 6 ||
+                      !/(?=.*[a-z])/.test(formData.password) ||
+                      !/(?=.*[A-Z])/.test(formData.password) ||
+                      !/(?=.*\d)/.test(formData.password)
+                    )}
                   />
+                  {!editingUser && (
+                    <Form.Text className="text-muted">
+                      Password must be at least 6 characters with uppercase, lowercase, and number
+                    </Form.Text>
+                  )}
+                  <Form.Control.Feedback type="invalid">
+                    Password must be at least 6 characters with uppercase, lowercase, and number
+                  </Form.Control.Feedback>
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -512,19 +622,29 @@ const UserManagement = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
-                  <Form.Label>Department</Form.Label>
+                  <Form.Label>Department {(formData.role === 'employee' || formData.role === 'team_lead') && '*'}</Form.Label>
                   <Form.Select
                     name="department"
                     value={formData.department}
                     onChange={handleInputChange}
+                    required={formData.role === 'employee' || formData.role === 'team_lead'}
+                    isInvalid={(formData.role === 'employee' || formData.role === 'team_lead') && !formData.department}
                   >
                     <option value="">Select Department</option>
                     {departments.map((dept) => (
-                      <option key={dept} value={dept}>
-                        {dept}
+                      <option key={dept._id} value={dept.dept_name || dept.name}>
+                        {dept.dept_name || dept.name}
                       </option>
                     ))}
                   </Form.Select>
+                  <Form.Control.Feedback type="invalid">
+                    Department is required for employees and team leads
+                  </Form.Control.Feedback>
+                  {(formData.role === 'managing_director' || formData.role === 'it_admin') && (
+                    <Form.Text className="text-muted">
+                      Department is optional for admin roles
+                    </Form.Text>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -535,7 +655,7 @@ const UserManagement = () => {
                   <Form.Label>Team</Form.Label>
                   <Form.Select
                     name="teamId"
-                    value={formData.teamId}
+                    value={formData.teamId || ""}
                     onChange={handleInputChange}
                   >
                     <option value="">Select Team</option>
@@ -545,6 +665,9 @@ const UserManagement = () => {
                       </option>
                     ))}
                   </Form.Select>
+                  <Form.Text className="text-muted">
+                    Team assignment is optional
+                  </Form.Text>
                 </Form.Group>
               </Col>
               <Col md={6}>

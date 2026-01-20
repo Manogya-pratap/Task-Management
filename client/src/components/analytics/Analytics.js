@@ -28,7 +28,7 @@ const Analytics = () => {
         totalTasks,
         totalUsers,
         totalTeams,
-        activeProjects: projects.filter((p) => p.status === "active").length,
+        activeProjects: projects.filter((p) => p.status === "In Progress").length,
         completedTasks: tasks.filter((t) => t.status === "completed").length,
         activeUsers: users.filter((u) => u.isActive).length,
       },

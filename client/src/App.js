@@ -22,6 +22,7 @@ import TaskCalendar from "./components/calendar/TaskCalendar";
 import TeamManagement from "./components/management/TeamManagement";
 import UserManagement from "./components/management/UserManagement";
 import ProjectManagement from "./components/management/ProjectManagement";
+import ProjectDetail from "./components/projects/ProjectDetail";
 import MyProjects from "./components/projects/MyProjects";
 import TeamProjects from "./components/projects/TeamProjects";
 import MyTasks from "./components/tasks/MyTasks";
@@ -221,6 +222,18 @@ const AppContent = () => {
             <Layout>
               <ErrorBoundary>
                 <ProjectManagement />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/projects/:projectId"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <ProjectDetail />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>

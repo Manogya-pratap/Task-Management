@@ -9,6 +9,7 @@ import "../styles/sidebar.css";
 
 const Layout = ({ children }) => {
   const { user, getUserFullName, logout } = useAuth();
+  const { projects } = useApp(); // Add projects from AppContext
   const navigate = useNavigate();
   const location = useLocation();
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -504,6 +505,71 @@ const Layout = ({ children }) => {
               </ul>
             </div>
           ))}
+
+          {/* Recent Projects Section */}
+          {projects && projects.length > 0 && (
+            <div className="sidebar-section">
+              {!sidebarCollapsed && (
+                <div className="sidebar-section-header p-3 pb-2">
+                  <small className="text-white opacity-75 fw-semibold text-uppercase">
+                    Recent Projects
+                  </small>
+                </div>
+              )}
+              <ul className="list-unstyled">
+                {projects.slice(0, 5).map((project, index) => (
+                  <li key={project._id}>
+                    <button
+                      onClick={() => navigate(`/projects/${project._id}`)}
+                      className={`sidebar-link d-flex align-items-center p-3 text-decoration-none w-100 border-0 text-start ${
+                        location.pathname === `/projects/${project._id}` ? "active" : ""
+                      }`}
+                      style={{
+                        background:
+                          location.pathname === `/projects/${project._id}`
+                            ? "rgba(255,255,255,0.1)"
+                            : "transparent",
+                        color: "white",
+                        fontSize: "13px",
+                        fontWeight:
+                          location.pathname === `/projects/${project._id}`
+                            ? "600"
+                            : "400",
+                        textShadow: "0 1px 2px rgba(0,0,0,0.1)",
+                        borderLeft:
+                          location.pathname === `/projects/${project._id}`
+                            ? "2px solid rgba(255,255,255,0.6)"
+                            : "none",
+                        borderRadius:
+                          location.pathname === `/projects/${project._id}`
+                            ? "0 4px 4px 0"
+                            : "0",
+                      }}
+                      title={sidebarCollapsed ? project.name : `Click to view ${project.name}`}
+                    >
+                      <i
+                        className="fas fa-folder me-3 text-white"
+                        style={{ width: "20px", fontSize: "12px" }}
+                      ></i>
+                      {!sidebarCollapsed && (
+                        <div className="w-100">
+                          <div 
+                            className="fw-medium text-white text-truncate"
+                            style={{ maxWidth: "180px" }}
+                          >
+                            {project.name}
+                          </div>
+                          <small className="text-white opacity-75 text-capitalize">
+                            {project.status || 'Draft'}
+                          </small>
+                        </div>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* Logout Section */}

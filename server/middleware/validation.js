@@ -195,14 +195,24 @@ const validateUserCreation = [
     ),
 
   body("department")
+    .optional()
     .trim()
     .isLength({ min: 1, max: 100 })
     .withMessage("Department must be between 1 and 100 characters"),
 
   body("teamId")
-    .optional()
-    .isMongoId()
-    .withMessage("Team ID must be a valid MongoDB ObjectId"),
+    .optional({ nullable: true, checkFalsy: true })
+    .custom((value) => {
+      // Allow null, undefined, or empty string
+      if (value === null || value === undefined || value === '') {
+        return true;
+      }
+      // If a value is provided, it must be a valid MongoDB ObjectId
+      if (!/^[0-9a-fA-F]{24}$/.test(value)) {
+        throw new Error('Team ID must be a valid MongoDB ObjectId');
+      }
+      return true;
+    }),
 ];
 
 const validateUserUpdate = [
@@ -288,8 +298,8 @@ const validateProjectCreation = [
 
   body("status")
     .optional()
-    .isIn(["draft", "planning", "active", "completed", "in_progress", "not_started"])
-    .withMessage("Status must be one of: draft, planning, active, completed"),
+    .isIn(["Draft", "Planning", "Designing", "Not Started", "In Progress", "Completed"])
+    .withMessage("Status must be one of: Draft, Planning, Designing, Not Started, In Progress, Completed"),
 
   body("startDate")
     .if(body("status").not().equals("draft"))
@@ -385,8 +395,8 @@ const validateProjectUpdate = [
 
   body("status")
     .optional()
-    .isIn(["planning", "active", "completed", "on_hold"])
-    .withMessage("Status must be one of: planning, active, completed, on_hold"),
+    .isIn(["Draft", "Planning", "Designing", "Not Started", "In Progress", "Completed"])
+    .withMessage("Status must be one of: Draft, Planning, Designing, Not Started, In Progress, Completed"),
 
   body("priority")
     .optional()

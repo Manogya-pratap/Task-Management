@@ -99,11 +99,48 @@ const getAllTasks = catchAsync(async (req, res, next) => {
       req.user.role
     );
 
+    // Transform tasks to match frontend expectations
+    const transformedTasks = tasks.map(task => {
+      const transformedTask = {
+        ...task,
+        // Add frontend-compatible field names
+        _id: task._id,
+        title: task.title,
+        description: task.description,
+        projectId: task.project_id,
+        assignedTo: task.assigned_to,
+        createdBy: task.created_by,
+        dueDate: task.due_date,
+        startDate: task.start_date,
+        completedDate: task.completed_date,
+        estimatedHours: task.estimated_hours,
+        scheduledDate: task.start_date, // Map start_date to scheduledDate for frontend
+        // Map backend status to frontend status
+        status: mapBackendStatusToFrontend(task.status),
+        // Map backend priority to frontend priority
+        priority: mapBackendPriorityToFrontend(task.priority),
+        // Keep original fields for backward compatibility
+        project_id: task.project_id,
+        assigned_to: task.assigned_to,
+        created_by: task.created_by,
+        due_date: task.due_date,
+        start_date: task.start_date,
+        completed_date: task.completed_date,
+        estimated_hours: task.estimated_hours,
+        tags: task.tags || [],
+        createdAt: task.createdAt,
+        updatedAt: task.updatedAt
+      };
+      
+      console.log(`Task ${task._id}: Backend status "${task.status}" -> Frontend status "${transformedTask.status}"`);
+      return transformedTask;
+    });
+
     res.status(200).json({
       status: "success",
-      results: tasks.length,
+      results: transformedTasks.length,
       data: {
-        tasks,
+        tasks: transformedTasks,
       },
     });
   } catch (error) {
@@ -118,6 +155,30 @@ const getAllTasks = catchAsync(async (req, res, next) => {
     });
   }
 });
+
+// Helper function to map backend status to frontend status
+function mapBackendStatusToFrontend(backendStatus) {
+  const statusMap = {
+    'Pending': 'new',
+    'In Progress': 'in_progress', 
+    'Review': 'in_progress', // Map Review to in_progress for frontend compatibility
+    'Done': 'completed'
+  };
+  const frontendStatus = statusMap[backendStatus] || 'new';
+  console.log(`Status mapping: "${backendStatus}" -> "${frontendStatus}"`);
+  return frontendStatus;
+}
+
+// Helper function to map backend priority to frontend priority
+function mapBackendPriorityToFrontend(backendPriority) {
+  const priorityMap = {
+    'Low': 'low',
+    'Medium': 'medium',
+    'High': 'high', 
+    'Urgent': 'urgent'
+  };
+  return priorityMap[backendPriority] || 'medium';
+}
 
 /**
  * Get single task by ID
@@ -161,8 +222,23 @@ const getTask = catchAsync(async (req, res, next) => {
  * Create new task
  */
 const createTask = catchAsync(async (req, res, next) => {
+  // Map frontend field names to backend field names
+  const {
+    title,
+    description,
+    projectId,
+    assignedTo,
+    status,
+    priority,
+    dueDate,
+    startDate,
+    scheduledDate,
+    estimatedHours,
+    tags
+  } = req.body;
+
   // Validate project exists and user has access
-  const project = await Project.findById(req.body.projectId);
+  const project = await Project.findById(projectId);
   if (!project) {
     return next(new AppError("Project not found", 404));
   }
@@ -171,7 +247,7 @@ const createTask = catchAsync(async (req, res, next) => {
     await logAccessDenied(
       req,
       "Project",
-      req.body.projectId,
+      projectId,
       `Access denied to create task in project: ${project.name}`
     );
     return next(
@@ -183,8 +259,8 @@ const createTask = catchAsync(async (req, res, next) => {
   }
 
   // Validate assigned user if provided
-  if (req.body.assignedTo) {
-    const assignedUser = await User.findById(req.body.assignedTo);
+  if (assignedTo) {
+    const assignedUser = await User.findById(assignedTo);
     if (!assignedUser) {
       return next(new AppError("Assigned user not found", 404));
     }
@@ -193,6 +269,7 @@ const createTask = catchAsync(async (req, res, next) => {
     if (
       !project.isAssigned(assignedUser._id) &&
       assignedUser.role === "employee" &&
+      assignedUser.teamId && 
       !assignedUser.teamId.equals(project.teamId)
     ) {
       return next(
@@ -201,22 +278,69 @@ const createTask = catchAsync(async (req, res, next) => {
     }
   }
 
-  // Set creator
-  req.body.createdBy = req.user._id;
+  // Get department IDs (use project's department for both req and exec)
+  const departmentId = project.dept_id || req.user.departmentId;
+
+  // Map frontend status to backend status
+  const backendStatus = mapFrontendStatusToBackend(status);
+  const backendPriority = mapFrontendPriorityToBackend(priority);
+
+  // Create task data with backend field names
+  const taskData = {
+    title,
+    description,
+    project_id: projectId,
+    assigned_to: assignedTo || req.user._id,
+    req_dept_id: departmentId,
+    exec_dept_id: departmentId,
+    created_by: req.user._id,
+    status: backendStatus,
+    priority: backendPriority,
+    due_date: dueDate || scheduledDate,
+    start_date: startDate || scheduledDate,
+    estimated_hours: estimatedHours || 0,
+    tags: tags || [],
+    // Add legacy fields for backward compatibility
+    projectId,
+    assignedTo: assignedTo || req.user._id,
+    createdBy: req.user._id,
+    dueDate: dueDate || scheduledDate,
+    startDate: startDate || scheduledDate,
+    estimatedHours: estimatedHours || 0
+  };
+
+  console.log("Creating task with data:", taskData);
 
   // Create task
-  const task = new Task(req.body);
+  const task = new Task(taskData);
   await task.save();
 
   // Add task to project
-  await project.addTask(task._id);
+  if (project.addTask) {
+    await project.addTask(task._id);
+  }
 
   // Populate the created task
   await task.populate([
-    { path: "assignedTo", select: "firstName lastName role" },
-    { path: "createdBy", select: "firstName lastName" },
-    { path: "projectId", select: "name status teamId" },
+    { path: "assigned_to", select: "firstName lastName role" },
+    { path: "created_by", select: "firstName lastName" },
+    { path: "project_id", select: "name status teamId" },
   ]);
+
+  // Transform task for frontend response
+  const transformedTask = {
+    ...task.toObject(),
+    _id: task._id,
+    projectId: task.project_id,
+    assignedTo: task.assigned_to,
+    createdBy: task.created_by,
+    dueDate: task.due_date,
+    startDate: task.start_date,
+    scheduledDate: task.start_date,
+    estimatedHours: task.estimated_hours,
+    status: mapBackendStatusToFrontend(task.status),
+    priority: mapBackendPriorityToFrontend(task.priority)
+  };
 
   // Audit log for task creation
   await logDataChange(
@@ -232,10 +356,33 @@ const createTask = catchAsync(async (req, res, next) => {
   res.status(201).json({
     status: "success",
     data: {
-      task,
+      task: transformedTask,
     },
   });
 });
+
+// Helper function to map frontend status to backend status
+function mapFrontendStatusToBackend(frontendStatus) {
+  const statusMap = {
+    'new': 'Pending',
+    'scheduled': 'Pending',
+    'in_progress': 'In Progress',
+    'completed': 'Done',
+    'planning': 'Pending'
+  };
+  return statusMap[frontendStatus] || 'Pending';
+}
+
+// Helper function to map frontend priority to backend priority
+function mapFrontendPriorityToBackend(frontendPriority) {
+  const priorityMap = {
+    'low': 'Low',
+    'medium': 'Medium',
+    'high': 'High',
+    'urgent': 'Urgent'
+  };
+  return priorityMap[frontendPriority] || 'Medium';
+}
 
 /**
  * Update task

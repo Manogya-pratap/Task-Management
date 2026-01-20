@@ -139,7 +139,7 @@ const ITAdminDashboard = () => {
     const totalUsers = users.length;
     const activeUsers = users.filter(u => u.isActive).length;
     const totalProjects = projects?.length || 0;
-    const activeProjects = projects?.filter(p => p.status === 'active').length || 0;
+    const activeProjects = projects?.filter(p => p.status === 'In Progress').length || 0;
     const totalTasks = tasks?.length || 0;
     const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0;
     const totalDepartments = departments.length;

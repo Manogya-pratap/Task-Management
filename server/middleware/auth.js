@@ -36,8 +36,8 @@ const protect = async (req, res, next) => {
       });
     }
 
-    // 4) Check if user is active
-    if (!currentUser.isActive) {
+    // 4) Check if user is active (use is_active as primary field)
+    if (!currentUser.is_active) {
       return res.status(401).json({
         status: 'fail',
         message: 'Your account has been deactivated. Please contact administrator.'
@@ -191,7 +191,7 @@ const optionalAuth = async (req, res, next) => {
         const decoded = await verifyToken(token);
         const currentUser = await User.findById(decoded.id);
         
-        if (currentUser && currentUser.isActive && !currentUser.changedPasswordAfter(decoded.iat)) {
+        if (currentUser && currentUser.is_active && !currentUser.changedPasswordAfter(decoded.iat)) {
           req.user = currentUser;
         }
       } catch (error) {

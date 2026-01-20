@@ -140,7 +140,7 @@ const login = async (req, res) => {
         { username: sanitizedUsername },
         { email: sanitizedUsername.toLowerCase() },
       ],
-      isActive: true,
+      isActive: true, // Keep using isActive for authentication (frontend compatibility)
     }).select("+password");
 
     console.log(`User found: ${user ? user.username : "null"}`);

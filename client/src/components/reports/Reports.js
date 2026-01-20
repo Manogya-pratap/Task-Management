@@ -298,9 +298,9 @@ const Reports = () => {
                   <td>
                     <Badge
                       bg={
-                        project.status === "completed"
+                        project.status === "Completed"
                           ? "success"
-                          : project.status === "active"
+                          : project.status === "In Progress"
                             ? "primary"
                             : "secondary"
                       }

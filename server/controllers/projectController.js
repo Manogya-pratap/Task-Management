@@ -89,11 +89,85 @@ const getAllProjects = catchAsync(async (req, res, next) => {
     })
     .sort({ createdAt: -1 });
 
+  // Calculate and update progress for each project
+  const updatedProjects = await Promise.all(
+    projects.map(async (project) => {
+      // Calculate progress based on multiple factors
+      let calculatedProgress = 0;
+      
+      // 1. Status-based base progress
+      const statusProgress = {
+        "Draft": 0,
+        "Planning": 10,
+        "Designing": 20,
+        "Not Started": 5,
+        "In Progress": 30,
+        "Completed": 100
+      };
+      
+      calculatedProgress = statusProgress[project.status] || 0;
+      
+      // 2. Task-based progress (if tasks exist)
+      if (project.tasks && project.tasks.length > 0) {
+        const completedTasks = project.tasks.filter(
+          (task) => task.status === "completed" || task.status === "Completed"
+        ).length;
+        const taskProgress = Math.round((completedTasks / project.tasks.length) * 100);
+        
+        // Use the higher of status-based or task-based progress
+        calculatedProgress = Math.max(calculatedProgress, taskProgress);
+      }
+      
+      // 3. Use manual progress if set and higher
+      if (project.progress && project.progress > calculatedProgress) {
+        calculatedProgress = project.progress;
+      }
+      
+      // 4. Timeline-based progress for "In Progress" projects
+      if (project.startDate && project.endDate && project.status === "In Progress") {
+        const now = new Date();
+        const start = new Date(project.startDate);
+        const end = new Date(project.endDate);
+        
+        if (now >= start && now <= end) {
+          const totalDuration = end - start;
+          const elapsed = now - start;
+          const timelineProgress = Math.round((elapsed / totalDuration) * 100);
+          
+          // Don't let timeline progress exceed other progress by too much
+          const maxTimelineProgress = Math.min(timelineProgress, calculatedProgress + 20);
+          calculatedProgress = Math.max(calculatedProgress, maxTimelineProgress);
+        }
+      }
+      
+      // Ensure progress is within bounds
+      calculatedProgress = Math.min(Math.max(calculatedProgress, 0), 100);
+      
+      // Update the project's progress field if it has changed significantly
+      if (Math.abs(project.progress - calculatedProgress) > 5) {
+        // Only save if the project has required fields or is a Draft
+        const hasRequiredFields = project.start_date && project.deadline;
+        const isDraft = project.status === "Draft";
+        
+        if (isDraft || hasRequiredFields) {
+          project.progress = calculatedProgress;
+          await project.save({ validateBeforeSave: false }); // Skip validation for progress updates
+        } else {
+          // Just update the progress in memory without saving to avoid validation errors
+          project.progress = calculatedProgress;
+          console.log(`Progress updated in memory for project ${project.name}: ${calculatedProgress}% (missing required dates)`);
+        }
+      }
+      
+      return project;
+    })
+  );
+
   res.status(200).json({
     status: "success",
-    results: projects.length,
+    results: updatedProjects.length,
     data: {
-      projects,
+      projects: updatedProjects,
     },
   });
 });
@@ -197,7 +271,8 @@ const createProject = catchAsync(async (req, res, next) => {
     // Check if user can create projects for this team
     if (
       req.user.role === "team_lead" &&
-      !req.user.teamId.equals(teamId)
+      req.user.teamId && 
+      req.user.teamId.toString() !== teamId.toString()
     ) {
       await logAccessDenied(
         req,
@@ -285,7 +360,7 @@ const updateProject = catchAsync(async (req, res, next) => {
   const originalProject = project.toObject();
 
   // Validate team change if provided
-  if (req.body.teamId && !req.body.teamId.equals(project.teamId)) {
+  if (req.body.teamId && req.body.teamId.toString() !== (project.teamId ? project.teamId.toString() : null)) {
     const team = await Team.findById(req.body.teamId);
     if (!team) {
       return next(new AppError("Invalid team ID", 400));
@@ -294,7 +369,8 @@ const updateProject = catchAsync(async (req, res, next) => {
     // Check if user can assign to this team
     if (
       req.user.role === "team_lead" &&
-      !req.user.teamId.equals(req.body.teamId)
+      req.user.teamId && 
+      req.user.teamId.toString() !== req.body.teamId.toString()
     ) {
       return next(
         new AppError("You can only assign projects to your own team", 403)
@@ -303,20 +379,45 @@ const updateProject = catchAsync(async (req, res, next) => {
   }
 
   // Validate assigned members if provided
-  if (req.body.assignedMembers) {
-    const teamId = req.body.teamId || project.teamId;
-    const members = await User.find({
-      _id: { $in: req.body.assignedMembers },
-      teamId: teamId,
-    });
+  if (req.body.assignedMembers && req.body.assignedMembers.length > 0) {
+    // Filter out null, undefined, and empty string values first
+    req.body.assignedMembers = req.body.assignedMembers.filter(id => 
+      id !== null && id !== undefined && id !== ''
+    );
+    
+    console.log('Validating assigned members (after filtering nulls):', req.body.assignedMembers);
+    
+    // If no valid members remain after filtering, set to empty array
+    if (req.body.assignedMembers.length === 0) {
+      req.body.assignedMembers = [];
+      console.log('No valid assigned members found, setting to empty array');
+    } else {
+      // Check if assigned members exist and are active
+      const members = await User.find({
+        _id: { $in: req.body.assignedMembers },
+        is_active: true, // Only allow active users
+      });
 
-    if (members.length !== req.body.assignedMembers.length) {
-      return next(
-        new AppError(
-          "All assigned members must belong to the project team",
-          400
-        )
-      );
+      console.log('Found members:', members.map(m => ({ id: m._id, name: m.name, active: m.is_active })));
+
+      if (members.length !== req.body.assignedMembers.length) {
+        // Find which members were not found
+        const foundIds = members.map(m => m._id.toString());
+        const notFoundIds = req.body.assignedMembers.filter(id => 
+          id && !foundIds.includes(id.toString())
+        );
+        
+        console.log('Members not found or inactive:', notFoundIds);
+        
+        // Instead of blocking, just filter out invalid members and continue
+        req.body.assignedMembers = foundIds;
+        console.log('Filtered assigned members to valid ones:', req.body.assignedMembers);
+        
+        // Log a warning but don't block the update
+        if (notFoundIds.length > 0) {
+          console.log(`Warning: ${notFoundIds.length} assigned members were invalid and removed from project ${project.name}`);
+        }
+      }
     }
   }
 
@@ -764,7 +865,7 @@ function canUserAccessProject(user, project) {
   }
 
   // Team leads can access their team's projects
-  if (user.role === "team_lead" && user.teamId.equals(project.teamId)) {
+  if (user.role === "team_lead" && user.teamId && project.teamId && user.teamId.equals(project.teamId)) {
     return true;
   }
 
@@ -774,7 +875,7 @@ function canUserAccessProject(user, project) {
   }
 
   // Project creator can access
-  if (project.createdBy.equals(user._id)) {
+  if (project.createdBy && user._id && project.createdBy.equals(user._id)) {
     return true;
   }
 
@@ -791,12 +892,12 @@ function canUserModifyProject(user, project) {
   }
 
   // Team leads can modify their team's projects
-  if (user.role === "team_lead" && user.teamId.equals(project.teamId)) {
+  if (user.role === "team_lead" && user.teamId && project.teamId && user.teamId.equals(project.teamId)) {
     return true;
   }
 
   // Project creator can modify
-  if (project.createdBy.equals(user._id)) {
+  if (project.createdBy && user._id && project.createdBy.equals(user._id)) {
     return true;
   }
 

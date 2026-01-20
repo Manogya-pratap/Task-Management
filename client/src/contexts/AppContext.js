@@ -478,6 +478,13 @@ export const AppProvider = ({ children }) => {
               "tasks for",
               user?.role
             );
+            
+            // Debug task status distribution
+            const statusCounts = tasks.reduce((acc, task) => {
+              acc[task.status] = (acc[task.status] || 0) + 1;
+              return acc;
+            }, {});
+            console.log("AppContext: Task status distribution:", statusCounts);
 
             // Update the ref with current timestamp
             tasksLastFetchRef.current = Date.now();

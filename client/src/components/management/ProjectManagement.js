@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   Button,
@@ -18,6 +19,7 @@ import api from "../../services/api";
 import moment from "moment";
 
 const ProjectManagement = () => {
+  const navigate = useNavigate();
   const { projects, teams, users, fetchProjects, fetchTeams, fetchUsers } =
     useApp();
   const { user } = useAuth();
@@ -30,23 +32,24 @@ const ProjectManagement = () => {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    status: "draft",  // Default to draft for easier project creation
+    status: "Draft",  // Use proper status value
     priority: "medium",
     startDate: "",
     endDate: "",
     budget: "",
+    progress: 0,  // Add progress field
     teamId: null,
     assignedMembers: [],
     tags: "",
   });
 
   const projectStatuses = [
-    { value: "draft", label: "Draft", color: "secondary" },
-    { value: "planning", label: "Planning", color: "info" },
-    { value: "active", label: "Active", color: "primary" },
-    { value: "on_hold", label: "On Hold", color: "warning" },
-    { value: "completed", label: "Completed", color: "success" },
-    { value: "cancelled", label: "Cancelled", color: "danger" },
+    { value: "Draft", label: "Draft", color: "secondary" },
+    { value: "Planning", label: "Planning", color: "info" },
+    { value: "Designing", label: "Designing", color: "warning" },
+    { value: "Not Started", label: "Not Started", color: "light" },
+    { value: "In Progress", label: "In Progress", color: "primary" },
+    { value: "Completed", label: "Completed", color: "success" },
   ];
 
   const priorities = [
@@ -68,7 +71,7 @@ const ProjectManagement = () => {
       setFormData({
         name: project.name || "",
         description: project.description || "",
-        status: project.status || "planning",
+        status: project.status || "Draft",
         priority: project.priority || "medium",
         startDate: project.startDate
           ? moment(project.startDate).format("YYYY-MM-DD")
@@ -77,6 +80,7 @@ const ProjectManagement = () => {
           ? moment(project.endDate).format("YYYY-MM-DD")
           : "",
         budget: project.budget || "",
+        progress: project.progress || 0,  // Add progress field
         teamId: project.teamId?._id || null,
         assignedMembers: project.assignedMembers?.map((m) => m._id) || [],
         tags: project.tags?.join(", ") || "",
@@ -86,11 +90,12 @@ const ProjectManagement = () => {
       setFormData({
         name: "",
         description: "",
-        status: "draft",  // Default to draft
+        status: "Draft",  // Use proper status value
         priority: "medium",
         startDate: "",
         endDate: "",
         budget: "",
+        progress: 0,  // Add progress field
         teamId: null,
         assignedMembers: [],
         tags: "",
@@ -136,13 +141,14 @@ const ProjectManagement = () => {
       const submitData = {
         name: formData.name,
         description: formData.description,
-        status: formData.status,           // Frontend status (planning, active, etc.)
+        status: formData.status,           // Frontend status (Draft, Not Started, In Progress, Completed)
         priority: formData.priority,
         startDate: formData.startDate,     // Keep camelCase for validation middleware
         endDate: formData.endDate,         // Keep camelCase for validation middleware
         budget: formData.budget ? parseFloat(formData.budget) : undefined,
+        progress: formData.progress ? parseInt(formData.progress) : 0,  // Add progress field
         teamId: formData.teamId || null,
-        assignedMembers: formData.assignedMembers,
+        assignedMembers: formData.assignedMembers.filter(id => id !== null && id !== undefined && id !== ''),
         tags: formData.tags
           .split(",")
           .map((tag) => tag.trim())
@@ -154,7 +160,8 @@ const ProjectManagement = () => {
 
       if (editingProject) {
         console.log("Updating project:", editingProject._id, submitData);
-        await api.patch(`/projects/${editingProject._id}`, submitData);
+        const response = await api.patch(`/projects/${editingProject._id}`, submitData);
+        console.log("Project update response:", response.data);
         setSuccess("Project updated successfully!");
         // Force refresh to ensure UI updates
         setTimeout(async () => {
@@ -223,11 +230,61 @@ const ProjectManagement = () => {
   };
 
   const calculateProgress = (project) => {
-    if (!project.tasks || project.tasks.length === 0) return 0;
-    const completedTasks = project.tasks.filter(
-      (task) => task.status === "completed"
-    ).length;
-    return Math.round((completedTasks / project.tasks.length) * 100);
+    // Multi-factor progress calculation
+    let progress = 0;
+    
+    // 1. Status-based base progress
+    const statusProgress = {
+      "Draft": 0,
+      "Planning": 10,
+      "Designing": 20,
+      "Not Started": 5,
+      "In Progress": 30,
+      "Completed": 100
+    };
+    
+    progress = statusProgress[project.status] || 0;
+    
+    // 2. Task-based progress (if tasks exist)
+    if (project.tasks && project.tasks.length > 0) {
+      const completedTasks = project.tasks.filter(
+        (task) => task.status === "completed" || task.status === "Completed"
+      ).length;
+      const taskProgress = Math.round((completedTasks / project.tasks.length) * 100);
+      
+      // Use the higher of status-based or task-based progress
+      progress = Math.max(progress, taskProgress);
+    }
+    
+    // 3. Use manual progress if set (from project.progress field)
+    if (project.progress && project.progress > 0) {
+      progress = Math.max(progress, project.progress);
+    }
+    
+    // 4. Use completionPercentage if available
+    if (project.completionPercentage && project.completionPercentage > 0) {
+      progress = Math.max(progress, project.completionPercentage);
+    }
+    
+    // 5. Timeline-based progress (optional enhancement)
+    if (project.startDate && project.endDate && project.status === "In Progress") {
+      const now = new Date();
+      const start = new Date(project.startDate);
+      const end = new Date(project.endDate);
+      
+      if (now >= start && now <= end) {
+        const totalDuration = end - start;
+        const elapsed = now - start;
+        const timelineProgress = Math.round((elapsed / totalDuration) * 100);
+        
+        // Don't let timeline progress exceed task/manual progress by too much
+        const maxTimelineProgress = Math.min(timelineProgress, progress + 20);
+        progress = Math.max(progress, maxTimelineProgress);
+      }
+    }
+    
+    // Ensure progress is within bounds
+    return Math.min(Math.max(progress, 0), 100);
   };
 
   const canManageProjects =
@@ -259,10 +316,18 @@ const ProjectManagement = () => {
 
       <Card>
         <Card.Header>
-          <h5 className="mb-0">
-            <i className="fas fa-list me-2"></i>
-            Projects Overview
-          </h5>
+          <div className="d-flex justify-content-between align-items-center">
+            <div>
+              <h5 className="mb-0">
+                <i className="fas fa-list me-2"></i>
+                Projects Overview
+              </h5>
+              <small className="text-muted">
+                <i className="fas fa-info-circle me-1"></i>
+                Click on project names to view detailed information
+              </small>
+            </div>
+          </div>
         </Card.Header>
         <Card.Body>
           {loading && !showModal ? (
@@ -274,7 +339,12 @@ const ProjectManagement = () => {
             <Table responsive hover>
               <thead>
                 <tr>
-                  <th>Project Name</th>
+                  <th>
+                    Project Name 
+                    <small className="text-muted ms-1">
+                      <i className="fas fa-mouse-pointer" title="Click project names to view details"></i>
+                    </small>
+                  </th>
                   <th>Status</th>
                   <th>Priority</th>
                   <th>Progress</th>
@@ -293,7 +363,31 @@ const ProjectManagement = () => {
                     <tr key={project._id}>
                       <td>
                         <div>
-                          <strong>{project.name}</strong>
+                          <strong 
+                            className="text-primary fw-bold clickable-project-name" 
+                            style={{ 
+                              cursor: "pointer",
+                              textDecoration: "underline",
+                              fontSize: "1.1em",
+                              transition: "all 0.2s ease-in-out"
+                            }}
+                            onClick={() => {
+                              console.log('🔍 Project name clicked:', project.name, 'ID:', project._id);
+                              console.log('🚀 Navigating to:', `/projects/${project._id}`);
+                              navigate(`/projects/${project._id}`);
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.color = "#0056b3";
+                              e.target.style.backgroundColor = "rgba(13, 110, 253, 0.1)";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.color = "#0d6efd";
+                              e.target.style.backgroundColor = "transparent";
+                            }}
+                            title="Click to view project details"
+                          >
+                            {project.name}
+                          </strong>
                           {project.description && (
                             <div className="text-muted small">
                               {project.description.substring(0, 100)}...
@@ -333,13 +427,21 @@ const ProjectManagement = () => {
                             variant={
                               progress === 100
                                 ? "success"
-                                : progress > 50
+                                : progress >= 75
                                   ? "info"
-                                  : "warning"
+                                  : progress >= 50
+                                    ? "primary"
+                                    : progress >= 25
+                                      ? "warning"
+                                      : "danger"
                             }
+                            style={{ height: "20px" }}
                           />
-                          <small className="text-muted">
-                            {project.tasks?.length || 0} tasks
+                          <small className="text-muted d-flex justify-content-between mt-1">
+                            <span>{project.tasks?.length || 0} tasks</span>
+                            <span>
+                              {project.tasks?.filter(t => t.status === "completed" || t.status === "Completed").length || 0} completed
+                            </span>
                           </small>
                         </div>
                       </td>
@@ -374,21 +476,34 @@ const ProjectManagement = () => {
                       </td>
                       {canManageProjects && (
                         <td>
-                          <Button
-                            variant="outline-primary"
-                            size="sm"
-                            className="me-2"
-                            onClick={() => handleShowModal(project)}
-                          >
-                            <i className="fas fa-edit"></i>
-                          </Button>
-                          <Button
-                            variant="outline-danger"
-                            size="sm"
-                            onClick={() => handleDelete(project._id)}
-                          >
-                            <i className="fas fa-trash"></i>
-                          </Button>
+                          <div className="d-flex gap-1">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              className="me-1"
+                              onClick={() => navigate(`/projects/${project._id}`)}
+                              title="View project details"
+                            >
+                              <i className="fas fa-eye"></i>
+                            </Button>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              className="me-1"
+                              onClick={() => handleShowModal(project)}
+                              title="Edit project"
+                            >
+                              <i className="fas fa-edit"></i>
+                            </Button>
+                            <Button
+                              variant="outline-danger"
+                              size="sm"
+                              onClick={() => handleDelete(project._id)}
+                              title="Delete project"
+                            >
+                              <i className="fas fa-trash"></i>
+                            </Button>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -540,6 +655,26 @@ const ProjectManagement = () => {
               </Col>
               <Col md={6}>
                 <Form.Group className="mb-3">
+                  <Form.Label>Manual Progress (%)</Form.Label>
+                  <Form.Control
+                    type="number"
+                    name="progress"
+                    value={formData.progress}
+                    onChange={handleInputChange}
+                    placeholder="0-100"
+                    min="0"
+                    max="100"
+                  />
+                  <Form.Text className="text-muted">
+                    Override automatic progress calculation (0-100%)
+                  </Form.Text>
+                </Form.Group>
+              </Col>
+            </Row>
+
+            <Row>
+              <Col md={6}>
+                <Form.Group className="mb-3">
                   <Form.Label>Team</Form.Label>
                   <Form.Select
                     name="teamId"
@@ -554,6 +689,9 @@ const ProjectManagement = () => {
                     ))}
                   </Form.Select>
                 </Form.Group>
+              </Col>
+              <Col md={6}>
+                {/* Space for future fields */}
               </Col>
             </Row>
 

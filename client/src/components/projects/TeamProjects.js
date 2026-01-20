@@ -102,9 +102,9 @@ const TeamProjects = () => {
   const getProjectStats = () => {
     const stats = {
       total: teamProjects.length,
-      active: teamProjects.filter((p) => p.status === "active").length,
-      completed: teamProjects.filter((p) => p.status === "completed").length,
-      on_hold: teamProjects.filter((p) => p.status === "on_hold").length,
+      active: teamProjects.filter((p) => p.status === "In Progress").length,
+      completed: teamProjects.filter((p) => p.status === "Completed").length,
+      on_hold: teamProjects.filter((p) => p.status === "Not Started").length,
       cancelled: teamProjects.filter((p) => p.status === "cancelled").length,
     };
     return stats;

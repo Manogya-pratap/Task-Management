@@ -110,7 +110,7 @@ export const useLazyDashboard = () => {
     ]
   );
 
-  // ✅ FIX 4: Initialize lazy loading with proper memoization
+  // ✅ FIX 4: Initialize lazy loading with proper memoization and force refresh
   const initializeDashboard = useCallback(async () => {
     // Prevent multiple initializations
     if (loadedSectionsRef.current.initialized) {
@@ -145,6 +145,31 @@ export const useLazyDashboard = () => {
       }
     }, 1000);
   }, [loadSection, user]);
+
+  // Force refresh all data
+  const forceRefreshAll = useCallback(async () => {
+    console.log('Force refreshing all dashboard data');
+    
+    // Reset initialization flag
+    loadedSectionsRef.current.initialized = false;
+    
+    // Reset all loaded sections
+    Object.keys(loadedSectionsRef.current).forEach(key => {
+      if (key !== 'initialized') {
+        loadedSectionsRef.current[key] = false;
+      }
+    });
+    
+    setLoadedSections({
+      projects: false,
+      tasks: false,
+      teams: false,
+      users: false,
+    });
+
+    // Re-initialize
+    await initializeDashboard();
+  }, [initializeDashboard]);
 
   // Check if dashboard is ready
   const isDashboardReady = useCallback(() => {
@@ -207,6 +232,7 @@ export const useLazyDashboard = () => {
     initializeDashboard,
     loadSection,
     reloadSection,
+    forceRefreshAll,
     isDashboardReady,
   };
 };

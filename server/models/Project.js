@@ -47,8 +47,8 @@ const projectSchema = new mongoose.Schema(
       type: String,
       required: [true, "Project status is required"],
       enum: {
-        values: ["Draft", "Not Started", "In Progress", "Completed"],
-        message: "Status must be one of: Draft, Not Started, In Progress, Completed",
+        values: ["Draft", "Planning", "Designing", "Not Started", "In Progress", "Completed"],
+        message: "Status must be one of: Draft, Planning, Designing, Not Started, In Progress, Completed",
       },
       default: "Draft",
     },

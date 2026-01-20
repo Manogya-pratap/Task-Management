@@ -73,7 +73,10 @@ const userSchema = new mongoose.Schema({
   lastName: String,
   department: String,
   teamId: mongoose.Schema.Types.ObjectId,
-  isActive: Boolean
+  isActive: {
+    type: Boolean,
+    default: true
+  }, // Keep for backward compatibility - synced with is_active
 }, {
   timestamps: true,
   toJSON: {
@@ -110,6 +113,12 @@ userSchema.pre('save', async function(next) {
     this.is_active = this.isActive;
   }
   if (this.isModified('is_active')) {
+    // Keep isActive for backward compatibility, but is_active is the source of truth
+    this.isActive = this.is_active;
+  }
+  
+  // Ensure isActive exists for backward compatibility
+  if (this.isActive === undefined || this.isActive === null) {
     this.isActive = this.is_active;
   }
   

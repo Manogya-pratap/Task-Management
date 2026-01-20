@@ -10,7 +10,7 @@ import { ComponentLoader } from "../LoadingSpinner";
 const MDDashboard = () => {
   const { getUserFullName } = useAuth();
   const { addNotification } = useApp();
-  const { projects, tasks, teams, loadingStatus, initializeDashboard } =
+  const { projects, tasks, teams, loadingStatus, initializeDashboard, forceRefreshAll } =
     useLazyDashboard();
 
   const [showCompletedTasks, setShowCompletedTasks] = useState(false);
@@ -62,13 +62,20 @@ const MDDashboard = () => {
   // Calculate company-wide metrics - handle empty arrays gracefully
   const totalProjects = projects?.length || 0;
   const activeProjects =
-    projects?.filter((p) => p.status === "active").length || 0;
+    projects?.filter((p) => p.status === "In Progress").length || 0;
   const totalTasks = tasks?.length || 0;
   const completedTasks =
     tasks?.filter((t) => t.status === "completed").length || 0;
   const totalTeams = teams?.length || 0;
   const totalMembers =
     teams?.reduce((sum, team) => sum + (team.members?.length || 0), 0) || 0;
+
+  // Debug task status distribution
+  console.log("MDDashboard: Task status distribution:", {
+    totalTasks,
+    completedTasks,
+    taskStatuses: tasks?.map(t => ({ id: t._id, title: t.title, status: t.status })) || []
+  });
 
   // Calculate completion percentage
   const overallCompletion =
@@ -121,6 +128,25 @@ const MDDashboard = () => {
                 </div>
                 <div className="col-md-4 text-md-end">
                   <div className="d-flex flex-column align-items-md-end">
+                    {/* Refresh Button */}
+                    <button
+                      className="btn btn-light btn-sm mb-2"
+                      onClick={async () => {
+                        addNotification({
+                          type: "info",
+                          message: "Refreshing dashboard data...",
+                        });
+                        await forceRefreshAll();
+                        addNotification({
+                          type: "success",
+                          message: "Dashboard data refreshed successfully!",
+                        });
+                      }}
+                      disabled={loadingStatus.isLoading}
+                    >
+                      <i className={`fas ${loadingStatus.isLoading ? 'fa-spinner fa-spin' : 'fa-sync-alt'} me-1`}></i>
+                      {loadingStatus.isLoading ? 'Refreshing...' : 'Refresh Data'}
+                    </button>
                     {/* Test Notification Button */}
                     <button
                       className="btn btn-light btn-sm mb-2"
