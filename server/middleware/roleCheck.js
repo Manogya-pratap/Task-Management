@@ -12,11 +12,23 @@ const checkRole = (...allowedRoles) => {
       });
     }
 
-    // Normalize role to uppercase for comparison
-    const userRole = (req.user.role || '').toUpperCase().replace('_', '_');
-    const normalizedAllowedRoles = allowedRoles.map(role => role.toUpperCase().replace('_', '_'));
+    const userRole = req.user.role || '';
+    
+    // Create role mapping for backward compatibility
+    const roleMapping = {
+      'ADMIN': ['it_admin', 'ADMIN'],
+      'MD': ['managing_director', 'MD'],
+      'TEAM_LEAD': ['team_lead', 'TEAM_LEAD'],
+      'EMPLOYEE': ['employee', 'EMPLOYEE']
+    };
 
-    if (!normalizedAllowedRoles.includes(userRole)) {
+    // Check if user role matches any of the allowed roles
+    const hasPermission = allowedRoles.some(allowedRole => {
+      const mappedRoles = roleMapping[allowedRole.toUpperCase()] || [allowedRole];
+      return mappedRoles.includes(userRole);
+    });
+
+    if (!hasPermission) {
       return res.status(403).json({
         status: 'fail',
         message: `Access denied. Required role: ${allowedRoles.join(' or ')}`
@@ -83,7 +95,7 @@ const checkTaskModifyPermission = async (req, res, next) => {
     const user = req.user;
 
     // MD and ADMIN can modify all tasks
-    if (user.role === 'MD' || user.role === 'ADMIN') {
+    if (user.role === 'managing_director' || user.role === 'it_admin') {
       req.task = task;
       return next();
     }
@@ -95,7 +107,7 @@ const checkTaskModifyPermission = async (req, res, next) => {
     }
 
     // Team Lead can modify tasks in their department
-    if (user.role === 'TEAM_LEAD' && user.dept_id) {
+    if (user.role === 'team_lead' && user.dept_id) {
       if (user.dept_id.equals(task.req_dept_id) || user.dept_id.equals(task.exec_dept_id)) {
         req.task = task;
         return next();
@@ -120,11 +132,11 @@ const checkTaskModifyPermission = async (req, res, next) => {
 const checkApprovalPermission = (req, res, next) => {
   const user = req.user;
 
-  // Normalize role to uppercase for comparison
-  const userRole = (user.role || '').toUpperCase().replace('_', '_');
+  // Normalize role for comparison
+  const userRole = user.role || '';
 
   // Only Team Lead, MD, and ADMIN can approve
-  if (!['TEAM_LEAD', 'MD', 'ADMIN'].includes(userRole)) {
+  if (!['team_lead', 'managing_director', 'it_admin'].includes(userRole)) {
     return res.status(403).json({
       status: 'fail',
       message: 'Only Team Lead, MD, or ADMIN can approve task completion'
@@ -152,7 +164,7 @@ const checkProjectAccess = async (req, res, next) => {
     const user = req.user;
 
     // MD and ADMIN can access all projects
-    if (user.role === 'MD' || user.role === 'ADMIN') {
+    if (user.role === 'managing_director' || user.role === 'it_admin') {
       req.project = project;
       return next();
     }

@@ -10,6 +10,9 @@ router.use(protect);
 // Get all departments (all authenticated users)
 router.get('/', departmentController.getAllDepartments);
 
+// Create new department (ADMIN/MD only)
+router.post('/', checkRole('ADMIN', 'MD'), departmentController.createDepartment);
+
 // Get department by name
 router.get('/name/:name', departmentController.getDepartmentByName);
 
@@ -18,6 +21,9 @@ router.get('/:id', departmentController.getDepartment);
 
 // Update department (ADMIN/MD only)
 router.patch('/:id', checkRole('ADMIN', 'MD'), departmentController.updateDepartment);
+
+// Delete department (ADMIN/MD only)
+router.delete('/:id', checkRole('ADMIN', 'MD'), departmentController.deleteDepartment);
 
 // Get department users
 router.get('/:id/users', departmentController.getDepartmentUsers);

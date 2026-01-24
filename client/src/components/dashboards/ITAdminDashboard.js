@@ -96,7 +96,14 @@ const ITAdminDashboard = () => {
     e.preventDefault();
     try {
       setLoading(true);
-      await departmentService.createDepartment(deptForm);
+      
+      // Transform form data to match backend expectations
+      const departmentData = {
+        name: deptForm.name,
+        description: deptForm.description
+      };
+      
+      await departmentService.createDepartment(departmentData);
       addNotification("Department created successfully", "success");
       setShowDeptModal(false);
       setDeptForm({ name: "", description: "" });

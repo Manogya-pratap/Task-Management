@@ -9,7 +9,13 @@ const departmentService = {
 
   // Create new department
   createDepartment: async (departmentData) => {
-    const response = await api.post('/departments', departmentData);
+    // Transform the data to match backend expectations
+    const payload = {
+      dept_name: departmentData.name,
+      description: departmentData.description || '',
+      active_project: departmentData.active_project || null
+    };
+    const response = await api.post('/departments', payload);
     return response.data;
   },
 

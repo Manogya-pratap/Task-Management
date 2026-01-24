@@ -179,7 +179,13 @@ const Layout = ({ children }) => {
               label: "My Team",
               icon: "fas fa-users",
               href: "/my-team",
-              description: "Manage team members",
+              description: "View team members",
+            },
+            {
+              label: "Team Management",
+              icon: "fas fa-users-cog",
+              href: "/team-management",
+              description: "Manage team members and assign tasks",
             },
             {
               label: "Create Employee",

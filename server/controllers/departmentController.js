@@ -74,7 +74,7 @@ const getDepartmentByName = catchAsync(async (req, res, next) => {
  */
 const updateDepartment = catchAsync(async (req, res, next) => {
   // Only ADMIN and MD can update departments
-  if (req.user.role !== 'ADMIN' && req.user.role !== 'MD') {
+  if (req.user.role !== 'it_admin' && req.user.role !== 'managing_director') {
     return next(new AppError('Only ADMIN or MD can update departments', 403));
   }
 
@@ -242,11 +242,92 @@ const getDepartmentStats = catchAsync(async (req, res, next) => {
   });
 });
 
+/**
+ * Create new department (ADMIN/MD only)
+ */
+const createDepartment = catchAsync(async (req, res, next) => {
+  // Only ADMIN and MD can create departments
+  if (req.user.role !== 'it_admin' && req.user.role !== 'managing_director') {
+    return next(new AppError('Only ADMIN or MD can create departments', 403));
+  }
+
+  const { dept_name, description, active_project } = req.body;
+
+  // Check if department name already exists
+  const existingDept = await Department.findOne({ 
+    dept_name: { $regex: new RegExp(`^${dept_name}$`, 'i') }
+  });
+
+  if (existingDept) {
+    return next(new AppError('Department with this name already exists', 400));
+  }
+
+  // Validate active_project if provided
+  if (active_project) {
+    const project = await Project.findById(active_project);
+    if (!project) {
+      return next(new AppError('Invalid project ID', 400));
+    }
+  }
+
+  const department = await Department.create({
+    dept_name,
+    description: description || '',
+    active_project: active_project || null,
+    is_active: true
+  });
+
+  res.status(201).json({
+    status: 'success',
+    data: {
+      department
+    }
+  });
+});
+
+/**
+ * Delete department (ADMIN/MD only)
+ */
+const deleteDepartment = catchAsync(async (req, res, next) => {
+  // Only ADMIN and MD can delete departments
+  if (req.user.role !== 'it_admin' && req.user.role !== 'managing_director') {
+    return next(new AppError('Only ADMIN or MD can delete departments', 403));
+  }
+
+  const department = await Department.findById(req.params.id);
+  
+  if (!department) {
+    return next(new AppError('Department not found', 404));
+  }
+
+  // Check if department has users
+  const userCount = await User.countDocuments({ dept_id: req.params.id, is_active: true });
+  if (userCount > 0) {
+    return next(new AppError('Cannot delete department with active users. Please reassign users first.', 400));
+  }
+
+  // Check if department has projects
+  const projectCount = await Project.countDocuments({ dept_id: req.params.id });
+  if (projectCount > 0) {
+    return next(new AppError('Cannot delete department with projects. Please reassign projects first.', 400));
+  }
+
+  // Soft delete - deactivate department
+  await Department.findByIdAndUpdate(req.params.id, { is_active: false });
+
+  res.status(204).json({
+    status: 'success',
+    data: null
+  });
+});
+
 module.exports = {
   getAllDepartments,
   getDepartment,
   getDepartmentByName,
+  createDepartment,
   updateDepartment,
+  deleteDepartment,
   getDepartmentUsers,
   getDepartmentProjects,
   getDepartmentStats

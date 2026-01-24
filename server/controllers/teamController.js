@@ -513,7 +513,11 @@ const getUsersByDepartment = async (req, res) => {
       });
     }
 
-    const users = await User.findByDepartment(department);
+    // Find users by department name (string field)
+    const users = await User.find({ 
+      department: department, 
+      is_active: true 
+    }).select('firstName lastName email role department teamId unique_id');
 
     res.status(200).json({
       status: 'success',

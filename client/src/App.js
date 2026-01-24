@@ -20,6 +20,7 @@ import ApprovalsPage from "./pages/ApprovalsPage";
 import DailyLogsPage from "./pages/DailyLogsPage";
 import TaskCalendar from "./components/calendar/TaskCalendar";
 import TeamManagement from "./components/management/TeamManagement";
+import TeamLeadManagement from "./components/management/TeamLeadManagement";
 import UserManagement from "./components/management/UserManagement";
 import ProjectManagement from "./components/management/ProjectManagement";
 import ProjectDetail from "./components/projects/ProjectDetail";
@@ -186,6 +187,18 @@ const AppContent = () => {
             <Layout>
               <ErrorBoundary>
                 <TeamManagement />
+              </ErrorBoundary>
+            </Layout>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/team-management"
+        element={
+          <ProtectedRoute>
+            <Layout>
+              <ErrorBoundary>
+                <TeamLeadManagement />
               </ErrorBoundary>
             </Layout>
           </ProtectedRoute>
