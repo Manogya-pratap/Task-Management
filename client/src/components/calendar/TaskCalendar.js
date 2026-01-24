@@ -3,7 +3,7 @@ import moment from "moment";
 import { useApp } from "../../contexts/AppContext";
 import { useAuth } from "../../contexts/AuthContext";
 import TaskForm from "../TaskForm";
-import TaskDetailModal from "../TaskDetailModal";
+import TaskDetailModal from "../tasks/TaskDetailModal";
 import "./TaskCalendar.css";
 
 const TaskCalendar = ({
